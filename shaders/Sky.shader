@@ -22,8 +22,8 @@ const vec3 day_color_horizon = vec3(0.3, 0.6, 0.8);
 const vec3 sun_color = vec3(1.0, 0.7, 0.55);
 const vec3 moon_color = vec3(0.6, 0.6, 0.8);
 //for 2d clouds
-const float CLOUD_LOWER=2800.0;
-const float CLOUD_UPPER=3800.0;
+const float CLOUD_LOWER=4800.0;
+const float CLOUD_UPPER=5800.0;
 
 lowp float rand(vec2 co){return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);}//просто пример рандома в шейдерах из инета
 
@@ -32,9 +32,8 @@ lowp float noise( in vec3 pos )
     pos*=0.01;
 	lowp float  z = pos.z*256.0;
 	lowp vec2 offz = vec2(0.317,0.123);
-	lowp vec2 uv1 = pos.xy + offz*floor(z); 
-	lowp vec2 uv2 = uv1  + offz;
-	return mix(textureLod( iChannel0, uv1 ,0.0).x,textureLod( iChannel0, uv2 ,0.0).x,fract(z));
+	lowp vec2 uv = pos.xy + offz*floor(z); 
+	return mix(textureLod( iChannel0, uv ,0.0).x,textureLod( iChannel0, uv+offz ,0.0).x,fract(z));
 }
 
 lowp float get_noise(vec3 p, float FBM_FREQ)
@@ -145,13 +144,12 @@ lowp vec4 clouds_2d(vec3 rd,vec3 wind)
 	lowp vec3 add = rd * ((end-beg) / 55.0);
 	lowp vec2 shade;
 	lowp vec2 shadeSum = vec2(0.0, 0.0);
-	shade.x = 1.0;
-	for (int i = 0; i < 5; i++)// Тут настраивается плотность облаков. Это цикл, тут можно сделать ещё меньше и быстрее
+	for (int i = 0; i < min(STEPS,10); i++)
 	{
 		if (shadeSum.y >= 1.0) break;
 		lowp float h = MapSH(p,cloudy,wind);
 		shade.y = max(h, 0.0); 
-        shade.x = clamp(-(MapSH(p,cloudy,wind)-MapSH(p+MOON_POS*200.0, cloudy,wind))*2., 0.05, 1.0);//Тут магия с shadertoy, позиция Луны, потому что освещать облака надо снизу, а Солнце сверху.
+        shade.x = clamp(-(h-MapSH(p+MOON_POS*200.0, cloudy,wind))*2., 0.05, 1.0);//Тут магия с shadertoy, позиция Луны, потому что освещать облака надо снизу, а Солнце сверху.
 		shadeSum += shade * (1.0 - shadeSum.y);
 		p += add;
 	}
@@ -176,7 +174,7 @@ void fragment(){
     lowp float horizonPow =1.-pow(1.0-abs(skyPow), 5.0);
     if(rd.y>0.0)
     {
-    if (STEPS < 30)	cld = clouds_2d(rd,WIND*iTime); else cld=clouds_3d(ro,rd,WIND*iTime);
+    if (STEPS < 20)	cld = clouds_2d(rd,WIND*iTime); else cld=clouds_3d(ro,rd,WIND*iTime);
 	cld=clamp(cld,vec4(0.),vec4(1.));
 	cld.rgb+=0.04*cld.rgb*horizonPow;
 	cld*=clamp((  1.0 - exp(-2.3 * pow(max((0.0), horizonPow), (2.6)))),0.,1.);//растворяем облака в горизонте
@@ -213,7 +211,7 @@ void fragment(){
 				cld.rgb = mix (vec3(0.0,0.0,0.0), cld.rgb, DAY_TIME.y); //постепенно осветляем с рассветом
 				break;
 				}
-		case 2: {sky = mix(mix(sunset_color_horizon, day_color_horizon, DAY_TIME.y), mix(sunset_color_sky, day_color_horizon, DAY_TIME.y),rd.y) + sun_amount;break;}
+		case 2: {sky = mix(mix(sunset_color_horizon, day_color_horizon, DAY_TIME.y), mix(sunset_color_sky, day_color_sky, DAY_TIME.y),rd.y) + sun_amount;break;}
 		case 3: {sky = mix(day_color_horizon, day_color_sky, rd.y) + sun_amount; break;}
 		case 4: {sky = mix(mix(day_color_horizon, sunset_color_horizon, DAY_TIME.y), mix(day_color_sky, sunset_color_sky, DAY_TIME.y),rd.y) + sun_amount;break;}
 		case 5: {sky = mix(mix(sunset_color_horizon, night_color_sky, DAY_TIME.y), mix(sunset_color_sky, night_color_sky, DAY_TIME.y),rd.y) + sun_amount;
