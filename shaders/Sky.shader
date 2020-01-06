@@ -14,13 +14,13 @@ uniform int STEPS :hint_range(0,100); //25
 uniform bool LIGHTING_STRIKE;
 uniform vec3 LIGHTTING_POS; //normalize this vector in script!
 
-const vec3 night_color_sky = vec3(0.0, 0.0, 0.0);
-const vec3 sunset_color_sky = vec3(0.3, 0.6, 0.8);
-const vec3 sunset_color_horizon= vec3(0.8, 0.35, 0.1);
-const vec3 day_color_sky= vec3(0.0, 0.1, 0.4);
-const vec3 day_color_horizon = vec3(0.3, 0.6, 0.8);
-const vec3 sun_color = vec3(1.0, 0.7, 0.55);
-const vec3 moon_color = vec3(0.6, 0.6, 0.8);
+uniform vec4 night_color_sky: hint_color;
+uniform vec4 sunset_color_sky: hint_color;
+uniform vec4 sunset_color_horizon: hint_color;
+uniform vec4 day_color_sky: hint_color;
+uniform vec4 day_color_horizon: hint_color;
+uniform vec4 sun_color: hint_color;
+uniform vec4 moon_color: hint_color;
 //for 2d clouds
 const float CLOUD_LOWER=4800.0;
 const float CLOUD_UPPER=5800.0;
@@ -153,7 +153,7 @@ lowp vec4 clouds_2d(vec3 rd,vec3 wind)
 		shadeSum += shade * (1.0 - shadeSum.y);
 		p += add;
 	}
-	lowp vec3 clouds = mix(vec3(pow(shadeSum.x, .6)), sun_color, (1.0-shadeSum.y)*.4);
+	lowp vec3 clouds = mix(vec3(pow(shadeSum.x, .6)), sun_color.rgb, (1.0-shadeSum.y)*.4);
     clouds = clamp(mix(vec3(0.0), min(clouds, 1.0), shadeSum.y),0.0,1.0);
 	return vec4(clouds, shadeSum.y);
 }
@@ -166,8 +166,8 @@ void fragment(){
     uv.y = 2.0 * uv.y - 1.0;
 	lowp vec3 rd = normalize(rotate_y(rotate_x(vec3(0.0, 0.0, 1.0),-uv.y*3.1415926535/2.0),-uv.x*3.1415926535));
 	lowp vec3 ro = vec3(0.0, 5.0, 0.0); //магический оффсет, хз зачем нужен, но в формулах часто используется
-	lowp vec3 sun_amount = sun_color * min(pow(max(dot(rd, SUN_POS), 0.0), 1500.0) * 5.0, 1.0) + sun_color * min(pow(max(dot(rd, SUN_POS), 0.0), 10.0) * .6, 1.0);
-	lowp vec3 moon_amount; 
+	lowp vec4 sun_amount = sun_color * min(pow(max(dot(rd, SUN_POS), 0.0), 1500.0) * 5.0, 1.0) + sun_color * min(pow(max(dot(rd, SUN_POS), 0.0), 10.0) * .6, 1.0);
+	lowp vec4 moon_amount; 
 	lowp float rnd = rand(rd.zx);
 	lowp vec4 cld;
 	lowp float skyPow = dot(rd, vec3(0.0, -1.0, 0.0));
@@ -175,7 +175,7 @@ void fragment(){
     if(rd.y>0.0)
     {
     if (STEPS < 20)	cld = clouds_2d(rd,WIND*iTime); else cld=clouds_3d(ro,rd,WIND*iTime);
-	cld=clamp(cld,vec4(0.),vec4(1.));
+	cld=clamp(cld,0.0,1.0);
 	cld.rgb+=0.04*cld.rgb*horizonPow;
 	cld*=clamp((  1.0 - exp(-2.3 * pow(max((0.0), horizonPow), (2.6)))),0.,1.);//растворяем облака в горизонте
     }
@@ -185,44 +185,44 @@ void fragment(){
     cld*=clamp((  1.0 - exp(-1.3 * pow(max((0.0), horizonPow), (2.6)))),0.,1.);
     }
 	//Облака рисовать закончили, дальше небо. До этого код не мой, так что ХЗ, что там))
-	lowp vec3 sky;
+	lowp vec4 sky;
 	switch (int(DAY_TIME.x))
 	{
 		case 0: {
-				sky = mix (sky, vec3(0.0,0.0,0.0), 0.99); //затемняем
+				sky.rgb = mix (sky.rgb, vec3(0.0), 0.99); //затемняем
 				if (cld.rgb == vec3 (0.0,0.0,0.0)) //Если нет облаков
 					{moon_amount = moon_color*min(pow(max(dot(rd, MOON_POS), 0.0), 3000.0) * 5.0, 0.99);
 					sky = sky + moon_amount;//Рисуем Луну
 					if (moon_amount.r < 0.01 && sun_amount.r<0.01) 
-						if (rnd - rd.y*0.0033> 0.996) sky = vec3(star_brightness(rand(rd.zy)/2.0));
+						if (rnd - rd.y*0.0033> 0.996) sky.rgb = vec3(star_brightness(rand(rd.zy)/2.0));
 					}
-				cld.rgb = mix (cld.rgb, vec3(0.0,0.0,0.0), 0.99); //затемняем
+				cld.rgb = mix (cld.rgb, vec3(0.0), 0.99); //затемняем
 				break;
 				}
 		
 		case 1: {sky = mix(mix(night_color_sky, sunset_color_horizon, DAY_TIME.y), mix(night_color_sky, sunset_color_sky, DAY_TIME.y),rd.y) + sun_amount;
-				sky = mix (vec3(0.0,0.0,0.0), sky, DAY_TIME.y); //постепенно осветляем с рассветом
-				if (cld.rgb == vec3 (0.0,0.0,0.0)) //Если нет облаков
+				sky.rgb = mix (vec3(0.0), sky.rgb, DAY_TIME.y); //постепенно осветляем с рассветом
+				if (cld.rgb == vec3 (0.0)) //Если нет облаков
 					{moon_amount = moon_color*min(pow(max(dot(rd, MOON_POS), 0.0), 3000.0) * 5.0, 1.0-DAY_TIME.y);sky = sky + moon_amount;//Рисуем Луну
 					if (moon_amount.r < 0.01 && sun_amount.r<0.01) //Если Луна или свет от Солнца не затмевает звёзды
 						if (rnd - rd.y*0.0033> 0.996) 
-							sky = mix (vec3(star_brightness(rand(rd.zy)/2.0)), sky ,DAY_TIME.y); //Рисуем звёзды
+							sky.rgb = mix (vec3(star_brightness(rand(rd.zy)/2.0)), sky.rgb ,DAY_TIME.y); //Рисуем звёзды
 					}
-				cld.rgb = mix (vec3(0.0,0.0,0.0), cld.rgb, DAY_TIME.y); //постепенно осветляем с рассветом
+				cld.rgb = mix (vec3(0.0), cld.rgb, DAY_TIME.y); //постепенно осветляем с рассветом
 				break;
 				}
 		case 2: {sky = mix(mix(sunset_color_horizon, day_color_horizon, DAY_TIME.y), mix(sunset_color_sky, day_color_sky, DAY_TIME.y),rd.y) + sun_amount;break;}
 		case 3: {sky = mix(day_color_horizon, day_color_sky, rd.y) + sun_amount; break;}
 		case 4: {sky = mix(mix(day_color_horizon, sunset_color_horizon, DAY_TIME.y), mix(day_color_sky, sunset_color_sky, DAY_TIME.y),rd.y) + sun_amount;break;}
 		case 5: {sky = mix(mix(sunset_color_horizon, night_color_sky, DAY_TIME.y), mix(sunset_color_sky, night_color_sky, DAY_TIME.y),rd.y) + sun_amount;
-				sky = mix (sky, vec3(0.0,0.0,0.0), DAY_TIME.y); //постепенно затемняем с закатом
-				if (cld.rgb == vec3 (0.0,0.0,0.0)) //Если нет облаков
+				sky = vec4 (mix (sky.rgb, vec3(0.0), DAY_TIME.y),1.0); //постепенно затемняем с закатом
+				if (cld.rgb == vec3 (0.0)) //Если нет облаков
 					{moon_amount=moon_color*min(pow(max(dot(rd, MOON_POS), 0.0), 3000.0) * 5.0, DAY_TIME.y); sky = sky+moon_amount;//Рисуем Луну
 					if (moon_amount.r < 0.01 && sun_amount.r<0.01) //Если Луна или свет от Солнца не затмевает звёзды
 						if (rnd - rd.y*0.0033> 0.996) 
-							sky = mix (sky, vec3(star_brightness(rand(rd.zy)/2.0)), DAY_TIME.y); //Рисуем звёзды
+							sky.rgb = mix (sky.rgb, vec3(star_brightness(rand(rd.zy)/2.0)), DAY_TIME.y); //Рисуем звёзды
 					}
-				cld.rgb = mix (cld.rgb, vec3(0.0,0.0,0.0), DAY_TIME.y); //постепенно затемняем с закатом
+				cld.rgb = mix (cld.rgb, vec3(0.0), DAY_TIME.y); //постепенно затемняем с закатом
 				break;
 				}
 	};
@@ -230,9 +230,10 @@ void fragment(){
 	{
 		lowp vec3 lighting_strength = vec3(clamp(sin(iTime*31.4),0.1,1.0));
 		lowp vec3 lighting_amount = lighting_strength * min(pow(max(dot(rd,LIGHTTING_POS), 0.0), 20.0) * 1.6, 1.0);
-		sky = mix (sky, lighting_strength,0.8);
+		sky = vec4(mix (sky.rgb, lighting_strength,0.8),1.0);
 		cld.rgb = mix(cld.rgb,lighting_amount, .5);
 	}
-	sky=mix(sky, cld.rgb/(0.0001+cld.a), cld.a);
-	COLOR = vec4(sky,1.0);
+	sky.rgb = clamp(sky.rgb,0.0,1.0);
+	sky.rgb = mix(sky.rgb, cld.rgb/(0.0001+cld.a), cld.a);
+	COLOR = vec4(sky.rgb,1.0);
 }
