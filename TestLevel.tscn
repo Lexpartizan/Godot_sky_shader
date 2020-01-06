@@ -1,0 +1,384 @@
+[gd_scene load_steps=12 format=2]
+
+[ext_resource path="res://Player.tscn" type="PackedScene" id=1]
+[ext_resource path="res://MovedPlatform.tscn" type="PackedScene" id=2]
+[ext_resource path="res://Sky.tscn" type="PackedScene" id=3]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Spatial
+
+# Declare member variables here. Examples:
+# var a = 2
+# var b = \"text\"
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	pass # Replace with function body.
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(delta):
+	if Input.is_key_pressed(KEY_ESCAPE):
+		get_tree().quit()
+"
+
+[sub_resource type="SpatialMaterial" id=2]
+albedo_color = Color( 0.513726, 0.564706, 0.505882, 1 )
+
+[sub_resource type="BoxShape" id=3]
+extents = Vector3( 25, 0.2, 25 )
+
+[sub_resource type="BoxShape" id=4]
+extents = Vector3( 0.3, 2, 25 )
+
+[sub_resource type="CubeMesh" id=5]
+
+[sub_resource type="SpatialMaterial" id=6]
+albedo_color = Color( 0.678431, 0.231373, 0.231373, 1 )
+metallic = 0.44
+roughness = 0.52
+
+[sub_resource type="BoxShape" id=7]
+
+[sub_resource type="BoxShape" id=8]
+extents = Vector3( 1, 1, 2.86814 )
+
+[node name="TestLevel" type="Spatial"]
+script = SubResource( 1 )
+
+[node name="Sky" parent="." instance=ExtResource( 3 )]
+
+[node name="LevelGeometry" type="Spatial" parent="."]
+
+[node name="CSGBox" type="CSGBox" parent="LevelGeometry"]
+width = 50.0
+height = 0.2
+depth = 50.0
+material = SubResource( 2 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGBox"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.123145, 0 )
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGBox/StaticBody"]
+shape = SubResource( 3 )
+
+[node name="CSGBox2" type="CSGBox" parent="LevelGeometry"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -25, 2.1, 0 )
+width = 0.5
+height = 4.0
+depth = 50.0
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGBox2"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGBox2/StaticBody"]
+shape = SubResource( 4 )
+
+[node name="CSGBox4" type="CSGBox" parent="LevelGeometry"]
+transform = Transform( -4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 0, 2.1, 25 )
+width = 0.5
+height = 4.0
+depth = 50.0
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGBox4"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGBox4/StaticBody"]
+shape = SubResource( 4 )
+
+[node name="CSGBox5" type="CSGBox" parent="LevelGeometry"]
+transform = Transform( -4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 0, 2.1, -25 )
+width = 0.5
+height = 4.0
+depth = 50.0
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGBox5"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGBox5/StaticBody"]
+shape = SubResource( 4 )
+
+[node name="CSGBox3" type="CSGBox" parent="LevelGeometry"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 25, 2.1, 0 )
+width = 0.5
+height = 4.0
+depth = 50.0
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGBox3"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGBox3/StaticBody"]
+shape = SubResource( 4 )
+
+[node name="CSGMesh" type="CSGMesh" parent="LevelGeometry"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -17.4599, 1.00525, 20.4129 )
+mesh = SubResource( 5 )
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh/StaticBody"]
+shape = SubResource( 7 )
+
+[node name="CSGMesh2" type="CSGMesh" parent="LevelGeometry"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -17.4599, 1.00525, 17.7766 )
+mesh = SubResource( 5 )
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh2"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh2/StaticBody"]
+shape = SubResource( 7 )
+
+[node name="CSGMesh19" type="CSGBox" parent="LevelGeometry"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.994442, 1.00412, -12.5018 )
+depth = 5.0
+material = SubResource( 6 )
+
+[node name="CSGMesh23" type="CSGBox" parent="LevelGeometry/CSGMesh19"]
+transform = Transform( 1, 0, 0, 0, 0.937404, -0.348245, 0, 0.348245, 0.937404, 0, 0.907646, 0.357163 )
+operation = 2
+width = 2.1
+height = 1.8
+depth = 5.5
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh19"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh19/StaticBody"]
+transform = Transform( 1, 0, 0, 0, 0.934192, -0.356771, 0, 0.356771, 0.934192, 0, -0.924864, -0.177806 )
+shape = SubResource( 8 )
+
+[node name="CSGMesh10" type="CSGMesh" parent="LevelGeometry"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.994442, 1.05588, -15.9761 )
+mesh = SubResource( 5 )
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh10"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh10/StaticBody"]
+shape = SubResource( 7 )
+
+[node name="CSGMesh11" type="CSGMesh" parent="LevelGeometry"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -3.0832, 1.05588, -15.9761 )
+mesh = SubResource( 5 )
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh11"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh11/StaticBody"]
+shape = SubResource( 7 )
+
+[node name="CSGMesh12" type="CSGMesh" parent="LevelGeometry"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -5.18223, 1.05588, -15.9761 )
+mesh = SubResource( 5 )
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh12"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh12/StaticBody"]
+shape = SubResource( 7 )
+
+[node name="CSGMesh18" type="CSGMesh" parent="LevelGeometry"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -10.7234, 1.05588, -16.689 )
+mesh = SubResource( 5 )
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh18"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh18/StaticBody"]
+shape = SubResource( 7 )
+
+[node name="CSGMesh23" type="CSGMesh" parent="LevelGeometry"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -12.8867, 1.05588, -16.689 )
+mesh = SubResource( 5 )
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh23"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh23/StaticBody"]
+shape = SubResource( 7 )
+
+[node name="CSGMesh25" type="CSGMesh" parent="LevelGeometry"]
+transform = Transform( 0.996625, 0, 0.0820951, 0, 1, 0, -0.0820951, 0, 0.996625, -12.8867, 1.05588, -14.5814 )
+mesh = SubResource( 5 )
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh25"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh25/StaticBody"]
+shape = SubResource( 7 )
+
+[node name="CSGMesh24" type="CSGMesh" parent="LevelGeometry"]
+transform = Transform( 0.999851, 0, 0.017243, 0, 1, 0, -0.017243, 0, 0.999851, -12.8867, 3.05983, -16.689 )
+mesh = SubResource( 5 )
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh24"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh24/StaticBody"]
+shape = SubResource( 7 )
+
+[node name="CSGMesh20" type="CSGMesh" parent="LevelGeometry"]
+transform = Transform( 7.19182, 0, 0, 0, 1.6877, 0, 0, 0, 0.392612, 17.7037, 1.68137, -3.34344 )
+mesh = SubResource( 5 )
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh20"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh20/StaticBody"]
+shape = SubResource( 7 )
+
+[node name="CSGMesh21" type="CSGMesh" parent="LevelGeometry"]
+transform = Transform( 7.19182, 0, 0, 0, 1.6877, 0, 0, 0, 0.392612, 17.7037, 1.68137, 0.587415 )
+mesh = SubResource( 5 )
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh21"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh21/StaticBody"]
+shape = SubResource( 7 )
+
+[node name="CSGMesh22" type="CSGMesh" parent="LevelGeometry"]
+transform = Transform( 7.19182, 0, 0, 0, -7.37719e-08, -0.392612, 0, 1.6877, -1.71616e-08, 17.7037, 3.6958, -1.36344 )
+mesh = SubResource( 5 )
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh22"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh22/StaticBody"]
+shape = SubResource( 7 )
+
+[node name="CSGMesh13" type="CSGMesh" parent="LevelGeometry"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -7.28137, 1.05588, -15.9761 )
+mesh = SubResource( 5 )
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh13"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh13/StaticBody"]
+shape = SubResource( 7 )
+
+[node name="CSGMesh14" type="CSGMesh" parent="LevelGeometry"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -7.28137, 1.05588, -18.0479 )
+mesh = SubResource( 5 )
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh14"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh14/StaticBody"]
+shape = SubResource( 7 )
+
+[node name="CSGMesh15" type="CSGMesh" parent="LevelGeometry"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -5.21427, 1.05588, -18.0479 )
+mesh = SubResource( 5 )
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh15"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh15/StaticBody"]
+shape = SubResource( 7 )
+
+[node name="CSGMesh16" type="CSGMesh" parent="LevelGeometry"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -3.10437, 1.05588, -18.0479 )
+mesh = SubResource( 5 )
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh16"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh16/StaticBody"]
+shape = SubResource( 7 )
+
+[node name="CSGMesh17" type="CSGMesh" parent="LevelGeometry"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.974883, 1.05588, -18.0479 )
+mesh = SubResource( 5 )
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh17"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh17/StaticBody"]
+shape = SubResource( 7 )
+
+[node name="CSGMesh29" type="CSGMesh" parent="LevelGeometry"]
+transform = Transform( 0.601062, 0, -0.799202, 0, 1, 0, 0.799202, 0, 0.601062, 2.7864, 1.05588, -17.8508 )
+mesh = SubResource( 5 )
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh29"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh29/StaticBody"]
+shape = SubResource( 7 )
+
+[node name="CSGMesh28" type="CSGMesh" parent="LevelGeometry"]
+transform = Transform( 0.601062, 0, -0.799202, 0, 1, 0, 0.799202, 0, 0.601062, 4.02886, 1.05588, -16.1988 )
+mesh = SubResource( 5 )
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh28"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh28/StaticBody"]
+shape = SubResource( 7 )
+
+[node name="CSGMesh27" type="CSGMesh" parent="LevelGeometry"]
+transform = Transform( 0.601062, 0, -0.799202, 0, 1, 0, 0.799202, 0, 0.601062, 5.29704, 1.05588, -14.5125 )
+mesh = SubResource( 5 )
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh27"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh27/StaticBody"]
+shape = SubResource( 7 )
+
+[node name="CSGMesh26" type="CSGMesh" parent="LevelGeometry"]
+transform = Transform( 0.601062, 0, -0.799202, 0, 1, 0, 0.799202, 0, 0.601062, 6.57699, 1.05588, -12.8106 )
+mesh = SubResource( 5 )
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh26"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh26/StaticBody"]
+shape = SubResource( 7 )
+
+[node name="CSGMesh3" type="CSGMesh" parent="LevelGeometry"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -11.7151, 1.00525, 19.9644 )
+mesh = SubResource( 5 )
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh3"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh3/StaticBody"]
+shape = SubResource( 7 )
+
+[node name="CSGMesh4" type="CSGMesh" parent="LevelGeometry"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -11.7151, 3.13936, 19.9644 )
+mesh = SubResource( 5 )
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh4"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh4/StaticBody"]
+shape = SubResource( 7 )
+
+[node name="CSGMesh5" type="CSGMesh" parent="LevelGeometry"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -11.7151, 1.16635, 17.9417 )
+mesh = SubResource( 5 )
+material = SubResource( 6 )
+
+[node name="StaticBody" type="StaticBody" parent="LevelGeometry/CSGMesh5"]
+
+[node name="CollisionShape" type="CollisionShape" parent="LevelGeometry/CSGMesh5/StaticBody"]
+shape = SubResource( 7 )
+
+[node name="Player" parent="." instance=ExtResource( 1 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0 )
+
+[node name="Platforms" type="Spatial" parent="."]
+
+[node name="MovedPlatform" parent="Platforms" instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 5, -13 )
+offset_y = -3.0
+
+[node name="MovedPlatform2" parent="Platforms" instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 10, -9 )
+offset_y = -5.0
+move_time = 10.0
+
+[node name="MovedPlatform3" parent="Platforms" instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 10, -9 )
+offset_y = 4.0
+move_time = 4.0
