@@ -1,8 +1,8 @@
 [gd_scene load_steps=7 format=2]
 
-[ext_resource path="res://shaders/noise.png" type="Texture" id=2]
 [ext_resource path="res://shaders/Sky.shader" type="Shader" id=3]
-[ext_resource path="res://default_env.tres" type="Environment" id=4]
+[ext_resource path="res://shaders/noise.png" type="Texture" id=4]
+[ext_resource path="res://default_env.tres" type="Environment" id=6]
 
 [sub_resource type="GDScript" id=1]
 script/source = "extends Spatial
@@ -17,18 +17,29 @@ func _process(delta):
 	$sky_viewport/sky_texture.material.set(\"shader_param/iTime\",iTime)
 
 func _cov_scb(value):
-	$sky_viewport/sky_texture.material.set(\"shader_param/COVERAGE\",float(value))
+	$sky_viewport/sky_texture.material.set(\"shader_param/COVERAGE\",value)
 
-func _abst_scb(value):
-	$sky_viewport/sky_texture.material.set(\"shader_param/ABSORPTION\",float(value))
+func _absb_scb(value):
+	$sky_viewport/sky_texture.material.set(\"shader_param/ABSORPTION\",value)
+	
 
 func _thick_scb(value):
 	$sky_viewport/sky_texture.material.set(\"shader_param/THICKNESS\",value)
 
 func _quality_scb(value):
 	$sky_viewport/sky_texture.material.set(\"shader_param/STEPS\",value)
-	print (value)
 
+func _wind(value):
+	$sky_viewport/sky_texture.material.set(\"shader_param/WIND\",Vector3(1.0,0.0,1.0).normalized()*value)
+
+
+func _lighting_on():
+	$sky_viewport/sky_texture.material.set(\"shader_param/LIGHTTING_POS\",Vector3(0.0,1.0,0.0).normalized());
+	$sky_viewport/sky_texture.material.set(\"shader_param/LIGHTING_STRIKE\",true);
+
+func _lighting_off():
+	$sky_viewport/sky_texture.material.set(\"shader_param/LIGHTING_STRIKE\",false);
+	
 func _DAY_TIME_changed(value):
 	var day_time: Vector2 = Vector2()
 	day_time.x = floor(value/0.0835) #Период дня
@@ -70,48 +81,38 @@ func _DAY_TIME_changed(value):
 		$Sun.visible = true
 	day_time.x = temp;
 	$sky_viewport/sky_texture.material.set(\"shader_param/DAY_TIME\",day_time)
-	
-
-func _wind(value):
-	$sky_viewport/sky_texture.material.set(\"shader_param/WIND\",Vector3(1.0,0.0,1.0).normalized()*value)
-
-
-func _lighting_on():
-	$sky_viewport/sky_texture.material.set(\"shader_param/LIGHTTING_POS\",Vector3(1.0,1.0,1.0).normalized());
-	$sky_viewport/sky_texture.material.set(\"shader_param/LIGHTING_STRIKE\",true);
-
-
-func _lighting_off():
-	$sky_viewport/sky_texture.material.set(\"shader_param/LIGHTING_STRIKE\",false);
 "
 
 [sub_resource type="ShaderMaterial" id=2]
 shader = ExtResource( 3 )
 shader_param/iTime = null
-shader_param/WIND = Vector3( 0.1, 0, 0 )
+shader_param/WIND = Vector3( 0, 0, 0.1 )
 shader_param/DAY_TIME = null
 shader_param/SUN_POS = null
 shader_param/MOON_POS = null
 shader_param/COVERAGE = 0.5
 shader_param/THICKNESS = 25.0
 shader_param/ABSORPTION = 1.0
-shader_param/STEPS = 30
-shader_param/LIGHTING_STRIKE = false
+shader_param/STEPS = 25
+shader_param/LIGHTING_STRIKE = null
 shader_param/LIGHTTING_POS = Vector3( 0, 1, 0 )
-shader_param/night_color_sky = Color( 0, 0, 0, 1 )
+shader_param/night_color_sky = null
 shader_param/sunset_color_sky = Color( 0.3, 0.6, 0.8, 1 )
-shader_param/sunset_color_horizon = Color( 1, 0.439216, 0.101961, 1 )
+shader_param/sunset_color_horizon = Color( 0.8, 0.35, 0.1, 1 )
 shader_param/day_color_sky = Color( 0, 0.101961, 0.4, 1 )
 shader_param/day_color_horizon = Color( 0.3, 0.6, 0.8, 1 )
-shader_param/sun_color = Color( 1, 0.7, 0.55, 1 )
-shader_param/moon_color = Color( 0.6, 0.6, 0.8, 1 )
-shader_param/iChannel0 = ExtResource( 2 )
+shader_param/sun_color = Color( 1, 0.705882, 0.54902, 1 )
+shader_param/moon_color = Color( 0.588235, 0.588235, 0.784314, 1 )
+shader_param/iChannel0 = ExtResource( 4 )
 
 [sub_resource type="ImageTexture" id=3]
 size = Vector2( 1024, 1024 )
 
 [node name="Sky" type="Spatial"]
 script = SubResource( 1 )
+
+[node name="Env" type="WorldEnvironment" parent="."]
+environment = ExtResource( 6 )
 
 [node name="sky_viewport" type="Viewport" parent="."]
 size = Vector2( 1024, 1024 )
@@ -123,18 +124,15 @@ texture = SubResource( 3 )
 centered = false
 
 [node name="Sun" type="DirectionalLight" parent="."]
-transform = Transform( 1, 0, 0, 0, -1.62921e-07, -1, 0, 1, -1.62921e-07, 0, 1, 0 )
+transform = Transform( 1, 0, 0, 0, -1.62921e-07, -1, 0, 1, -1.62921e-07, 0, -1, 0 )
 shadow_enabled = true
-shadow_color = Color( 0.392157, 0.392157, 0.392157, 1 )
+shadow_color = Color( 0.3, 0.3, 0.3, 1 )
 
 [node name="Moon" type="DirectionalLight" parent="."]
 transform = Transform( 1, 0, 0, 0, -1.62921e-07, 1, 0, -1, -1.62921e-07, 0, 1, 0 )
-light_color = Color( 0.666667, 0.666667, 1, 1 )
-light_energy = 0.1
+light_color = Color( 0.588235, 0.588235, 0.784314, 1 )
+light_energy = 0.15
 shadow_enabled = true
-
-[node name="Env" type="WorldEnvironment" parent="."]
-environment = ExtResource( 4 )
 
 [node name="Control" type="Control" parent="."]
 margin_right = 40.0
@@ -144,15 +142,11 @@ __meta__ = {
 }
 
 [node name="Label" type="Label" parent="Control"]
-margin_left = 7.0
-margin_top = 140.763
-margin_right = 250.0
-margin_bottom = 171.763
-text = "Control:
- Press G and move sliders."
-__meta__ = {
-"_edit_use_anchors_": false
-}
+margin_left = 25.0
+margin_top = 3.763
+margin_right = 268.0
+margin_bottom = 17.763
+text = "Control: Arrow + Mouse (click + move)"
 
 [node name="Label2" type="Label" parent="Control"]
 margin_left = 5.0
@@ -213,9 +207,6 @@ margin_top = 16.2108
 margin_right = 145.0
 margin_bottom = 28.2108
 value = 25.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
 [node name="Label6" type="Label" parent="Control"]
 margin_left = 5.0
@@ -232,26 +223,23 @@ margin_left = 5.0
 margin_top = 16.2108
 margin_right = 145.0
 margin_bottom = 28.2108
-value = 30.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
+value = 25.0
 
 [node name="Label7" type="Label" parent="Control"]
-margin_left = 13.9604
-margin_top = 637.897
-margin_right = 81.9604
-margin_bottom = 651.897
+margin_left = 12.6
+margin_top = 553.554
+margin_right = 80.6001
+margin_bottom = 567.554
 text = "DAY_TIME"
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="HScrollBar" type="HScrollBar" parent="Control/Label7"]
-margin_left = 0.349976
-margin_top = -95.4
-margin_right = 982.35
-margin_bottom = -83.4
+margin_left = 5.0
+margin_top = 17.0
+margin_right = 989.0
+margin_bottom = 29.0
 max_value = 1.0
 __meta__ = {
 "_edit_use_anchors_": false
@@ -288,7 +276,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 [connection signal="value_changed" from="Control/Label3/HScrollBar" to="." method="_cov_scb"]
-[connection signal="value_changed" from="Control/Label4/HScrollBar" to="." method="_abst_scb"]
+[connection signal="value_changed" from="Control/Label4/HScrollBar" to="." method="_absb_scb"]
 [connection signal="value_changed" from="Control/Label5/HScrollBar" to="." method="_thick_scb"]
 [connection signal="value_changed" from="Control/Label6/HScrollBar" to="." method="_quality_scb"]
 [connection signal="value_changed" from="Control/Label7/HScrollBar" to="." method="_DAY_TIME_changed"]
