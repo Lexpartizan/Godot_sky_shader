@@ -142,11 +142,14 @@ __meta__ = {
 }
 
 [node name="Label" type="Label" parent="Control"]
-margin_left = 25.0
-margin_top = 3.763
-margin_right = 268.0
-margin_bottom = 17.763
-text = "Control: Arrow + Mouse (click + move)"
+margin_left = 4.88165
+margin_top = 152.329
+margin_right = 247.882
+margin_bottom = 166.329
+text = "Control: Press G and move sliders."
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
 [node name="Label2" type="Label" parent="Control"]
 margin_left = 5.0
