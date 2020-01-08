@@ -168,20 +168,20 @@ __meta__ = {
 }
 
 [node name="Label" type="Label" parent="Control"]
-margin_left = 14.8817
-margin_top = 403.814
-margin_right = 257.882
-margin_bottom = 417.814
+margin_left = 16.6635
+margin_top = 417.404
+margin_right = 259.664
+margin_bottom = 431.404
 text = "Control: Press G and move sliders."
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="Label3" type="Label" parent="Control"]
-margin_left = 14.0527
-margin_top = 424.312
-margin_right = 82.0527
-margin_bottom = 438.312
+margin_left = 13.6943
+margin_top = 441.248
+margin_right = 81.6943
+margin_bottom = 455.248
 text = "COVERAGE"
 __meta__ = {
 "_edit_use_anchors_": false
@@ -199,10 +199,10 @@ __meta__ = {
 }
 
 [node name="Label6" type="Label" parent="Control"]
-margin_left = 14.0001
-margin_top = 458.141
-margin_right = 149.0
-margin_bottom = 472.141
+margin_left = 14.3768
+margin_top = 481.196
+margin_right = 149.377
+margin_bottom = 495.196
 text = "Quality STEPS (1-100)"
 __meta__ = {
 "_edit_use_anchors_": false
@@ -220,10 +220,10 @@ __meta__ = {
 }
 
 [node name="Label7" type="Label" parent="Control"]
-margin_left = 12.6
-margin_top = 553.554
-margin_right = 80.6001
-margin_bottom = 567.554
+margin_left = 13.9099
+margin_top = 582.77
+margin_right = 81.91
+margin_bottom = 596.77
 text = "DAY_TIME"
 __meta__ = {
 "_edit_use_anchors_": false
@@ -232,7 +232,7 @@ __meta__ = {
 [node name="HScrollBar" type="HScrollBar" parent="Control/Label7"]
 margin_left = 5.0
 margin_top = 17.0
-margin_right = 989.0
+margin_right = 1242.0
 margin_bottom = 29.0
 max_value = 1.0
 __meta__ = {
@@ -240,10 +240,10 @@ __meta__ = {
 }
 
 [node name="Label8" type="Label" parent="Control"]
-margin_left = 13.3327
-margin_top = 485.798
-margin_right = 102.333
-margin_bottom = 499.798
+margin_left = 14.9356
+margin_top = 513.504
+margin_right = 103.936
+margin_bottom = 527.504
 text = "wind_strength"
 __meta__ = {
 "_edit_use_anchors_": false
@@ -261,10 +261,10 @@ __meta__ = {
 }
 
 [node name="Button" type="Button" parent="Control"]
-margin_left = 19.7012
-margin_top = 528.879
-margin_right = 152.701
-margin_bottom = 548.879
+margin_left = 22.8748
+margin_top = 550.462
+margin_right = 155.875
+margin_bottom = 570.462
 text = "lighting stirke"
 __meta__ = {
 "_edit_use_anchors_": false
