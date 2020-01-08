@@ -20,6 +20,12 @@ config/description="Godot sky shader for day/night cycle and simple Third Person
 run/main_scene="res://TestLevel.tscn"
 config/icon="res://icon.png"
 
+[display]
+
+window/size/width=1280
+window/size/height=720
+window/size/always_on_top=true
+
 [input]
 
 move_forward={
@@ -70,6 +76,7 @@ gui_management={
 
 [rendering]
 
+threads/thread_model=2
 vram_compression/import_etc=true
 vram_compression/import_etc2=false
 environment/default_environment="res://default_env.tres"
