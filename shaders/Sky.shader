@@ -11,7 +11,7 @@ uniform float COVERAGE :hint_range(0,1); //0.5
 uniform float THICKNESS :hint_range(0,100); //25.
 uniform float ABSORPTION :hint_range(0,10); //1.030725
 uniform int STEPS :hint_range(0,100); //25
-uniform bool LIGHTING_STRIKE;
+uniform vec3 LIGHTING_STRENGTH;
 uniform vec3 LIGHTTING_POS; //normalize this vector in script!
 
 uniform vec4 night_color_sky: hint_color;
@@ -167,6 +167,7 @@ void fragment(){
 	lowp vec3 rd = normalize(rotate_y(rotate_x(vec3(0.0, 0.0, 1.0),-uv.y*3.1415926535/2.0),-uv.x*3.1415926535));
 	lowp vec3 ro = vec3(0.0, 5.0, 0.0); //магический оффсет, хз зачем нужен, но в формулах часто используется
 	lowp vec4 sun_amount = sun_color * min(pow(max(dot(rd, SUN_POS), 0.0), 1500.0) * 5.0, 1.0) + sun_color * min(pow(max(dot(rd, SUN_POS), 0.0), 10.0) * .6, 1.0);
+	lowp float moon_amount_value = pow(max(dot(rd, MOON_POS), 0.0), 3000.0) * 5.0;
 	lowp vec4 moon_amount; 
 	lowp float rnd = rand(rd.zx);
 	lowp vec4 cld;
@@ -191,8 +192,8 @@ void fragment(){
 		case 0: {
 				sky.rgb = mix (sky.rgb, vec3(0.0), 0.99); //затемняем
 				if (cld.rgb == vec3 (0.0,0.0,0.0)) //Если нет облаков
-					{moon_amount = moon_color*min(pow(max(dot(rd, MOON_POS), 0.0), 3000.0) * 5.0, 0.99);
-					sky = sky + moon_amount;//Рисуем Луну
+					{moon_amount = moon_color*min(moon_amount_value, 0.99);
+					sky = sky + moon_color*moon_amount;//Рисуем Луну
 					if (moon_amount.r < 0.01 && sun_amount.r<0.01) 
 						if (rnd - rd.y*0.0033> 0.996) sky.rgb = vec3(star_brightness(rand(rd.zy)/2.0));
 					}
@@ -203,7 +204,7 @@ void fragment(){
 		case 1: {sky = mix(mix(night_color_sky, sunset_color_horizon, DAY_TIME.y), mix(night_color_sky, sunset_color_sky, DAY_TIME.y),rd.y) + sun_amount;
 				sky.rgb = mix (vec3(0.0), sky.rgb, DAY_TIME.y); //постепенно осветляем с рассветом
 				if (cld.rgb == vec3 (0.0)) //Если нет облаков
-					{moon_amount = moon_color*min(pow(max(dot(rd, MOON_POS), 0.0), 3000.0) * 5.0, 1.0-DAY_TIME.y);sky = sky + moon_amount;//Рисуем Луну
+					{moon_amount = moon_color*min(moon_amount_value, 1.0-DAY_TIME.y);sky = sky + moon_amount;//Рисуем Луну
 					if (moon_amount.r < 0.01 && sun_amount.r<0.01) //Если Луна или свет от Солнца не затмевает звёзды
 						if (rnd - rd.y*0.0033> 0.996) 
 							sky.rgb = mix (vec3(star_brightness(rand(rd.zy)/2.0)), sky.rgb ,DAY_TIME.y); //Рисуем звёзды
@@ -217,7 +218,7 @@ void fragment(){
 		case 5: {sky = mix(mix(sunset_color_horizon, night_color_sky, DAY_TIME.y), mix(sunset_color_sky, night_color_sky, DAY_TIME.y),rd.y) + sun_amount;
 				sky = vec4 (mix (sky.rgb, vec3(0.0), DAY_TIME.y),1.0); //постепенно затемняем с закатом
 				if (cld.rgb == vec3 (0.0)) //Если нет облаков
-					{moon_amount=moon_color*min(pow(max(dot(rd, MOON_POS), 0.0), 3000.0) * 5.0, DAY_TIME.y); sky = sky+moon_amount;//Рисуем Луну
+					{moon_amount=moon_color*min(moon_amount_value, DAY_TIME.y); sky = sky+moon_amount;//Рисуем Луну
 					if (moon_amount.r < 0.01 && sun_amount.r<0.01) //Если Луна или свет от Солнца не затмевает звёзды
 						if (rnd - rd.y*0.0033> 0.996) 
 							sky.rgb = mix (sky.rgb, vec3(star_brightness(rand(rd.zy)/2.0)), DAY_TIME.y); //Рисуем звёзды
@@ -226,11 +227,10 @@ void fragment(){
 				break;
 				}
 	};
-	if (LIGHTING_STRIKE)
+	if (LIGHTING_STRENGTH.r >0.1)
 	{
-		lowp vec3 lighting_strength = vec3(clamp(sin(iTime*31.4),0.1,1.0));
-		lowp vec3 lighting_amount = lighting_strength * min(pow(max(dot(rd,LIGHTTING_POS), 0.0), 20.0) * 1.6, 1.0);
-		sky = vec4(mix (sky.rgb, lighting_strength,0.8),1.0);
+		lowp vec3 lighting_amount = LIGHTING_STRENGTH * min(pow(max(dot(rd,LIGHTTING_POS), 0.0), 20.0) * 1.6, 1.0);
+		sky = vec4(mix (sky.rgb, LIGHTING_STRENGTH,0.8),1.0);
 		cld.rgb = mix(cld.rgb,lighting_amount, .5);
 	}
 	sky.rgb = clamp(sky.rgb,0.0,1.0);
