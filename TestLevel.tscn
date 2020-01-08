@@ -63,6 +63,7 @@ shape = SubResource( 3 )
 
 [node name="CSGBox2" type="CSGBox" parent="LevelGeometry"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -25, 2.1, 0 )
+visible = false
 width = 0.5
 height = 4.0
 depth = 50.0
@@ -74,6 +75,7 @@ shape = SubResource( 4 )
 
 [node name="CSGBox4" type="CSGBox" parent="LevelGeometry"]
 transform = Transform( -4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 0, 2.1, 25 )
+visible = false
 width = 0.5
 height = 4.0
 depth = 50.0
@@ -85,6 +87,7 @@ shape = SubResource( 4 )
 
 [node name="CSGBox5" type="CSGBox" parent="LevelGeometry"]
 transform = Transform( -4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 0, 2.1, -25 )
+visible = false
 width = 0.5
 height = 4.0
 depth = 50.0
@@ -96,6 +99,7 @@ shape = SubResource( 4 )
 
 [node name="CSGBox3" type="CSGBox" parent="LevelGeometry"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 25, 2.1, 0 )
+visible = false
 width = 0.5
 height = 4.0
 depth = 50.0
