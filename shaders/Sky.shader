@@ -8,6 +8,7 @@ uniform vec2 DAY_TIME;
 uniform vec3 SUN_POS; //normalize this vector in script!
 uniform vec3 MOON_POS; //normalize this vector in script!
 uniform float COVERAGE :hint_range(0,1); //0.5
+uniform float HEIGHT :hint_range(0,1); //0.0
 uniform float THICKNESS :hint_range(0,100); //25.
 uniform float ABSORPTION :hint_range(0,10); //1.030725
 uniform int STEPS :hint_range(0,100); //25
@@ -22,8 +23,8 @@ uniform vec4 day_color_horizon: hint_color;
 uniform vec4 sun_color: hint_color;
 uniform vec4 moon_color: hint_color;
 //for 2d clouds
-const float CLOUD_LOWER=4800.0;
-const float CLOUD_UPPER=5800.0;
+const float CLOUD_LOWER=7000.0;
+const float CLOUD_UPPER=9000.0;
 
 lowp float rand(vec2 co){return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);}//просто пример рандома в шейдерах из инета
 
@@ -74,7 +75,7 @@ lowp float density(vec3 pos, vec3 offset){
 }
 
 lowp vec4 clouds_3d(vec3 ro, vec3 rd, vec3 wind){
-	lowp vec3 apos=vec3(0, -450, 0);//Тут хоть как-то можно влиять на высоту. А строчкой ниже на масштаб облаков
+	lowp vec3 apos=vec3(0, -450, 0);
 	lowp float arad=500.0;
     lowp vec3 C = vec3(0, 0, 0);
 	lowp float alpha = 0.0;
@@ -131,20 +132,20 @@ lowp vec3 rotate_x(vec3 v, float angle)
 lowp float MapSH(vec3 p, float cloudy, vec3 offset)
 {
 	lowp float h = -(get_noise(p*0.0003+offset, 2.76434)-cloudy-.6);
-    h *= smoothstep(CLOUD_UPPER+100., CLOUD_UPPER, p.y);
+    h *= smoothstep((HEIGHT+0.1)*CLOUD_UPPER+100., (HEIGHT+0.1)*CLOUD_UPPER, p.y);
 	return h;
 }
 
 lowp vec4 clouds_2d(vec3 rd,vec3 wind)
 {
 	lowp float cloudy = COVERAGE -0.5;
-	lowp float beg = ((CLOUD_LOWER) / rd.y);
-	lowp float end = ((CLOUD_UPPER) / rd.y);
+	lowp float beg = (((HEIGHT+0.1)*CLOUD_LOWER) / rd.y);
+	lowp float end = (((HEIGHT+0.1)*CLOUD_UPPER) / rd.y);
 	lowp vec3 p = vec3(rd * beg);
 	lowp vec3 add = rd * ((end-beg) / 55.0);
 	lowp vec2 shade;
 	lowp vec2 shadeSum = vec2(0.0, 0.0);
-	for (int i = 0; i < min(STEPS,10); i++)
+	for (int i = 0; i < min(STEPS,5); i++)
 	{
 		if (shadeSum.y >= 1.0) break;
 		lowp float h = MapSH(p,cloudy,wind);
@@ -165,7 +166,7 @@ void fragment(){
     uv.x = 2.0 * uv.x - 1.0;
     uv.y = 2.0 * uv.y - 1.0;
 	lowp vec3 rd = normalize(rotate_y(rotate_x(vec3(0.0, 0.0, 1.0),-uv.y*3.1415926535/2.0),-uv.x*3.1415926535));
-	lowp vec3 ro = vec3(0.0, 5.0, 0.0); //магический оффсет, хз зачем нужен, но в формулах часто используется
+	lowp vec3 ro = vec3(0.0, -200.0*HEIGHT+40.0, 0.0); //тут можно регулировать высоту облаков.
 	lowp vec4 sun_amount = sun_color * min(pow(max(dot(rd, SUN_POS), 0.0), 1500.0) * 5.0, 1.0) + sun_color * min(pow(max(dot(rd, SUN_POS), 0.0), 10.0) * .6, 1.0);
 	lowp float moon_amount_value = pow(max(dot(rd, MOON_POS), 0.0), 3000.0) * 5.0;
 	lowp vec4 moon_amount; 
@@ -185,7 +186,6 @@ void fragment(){
     cld.a=1.;
     cld*=clamp((  1.0 - exp(-1.3 * pow(max((0.0), horizonPow), (2.6)))),0.,1.);
     }
-	//Облака рисовать закончили, дальше небо. До этого код не мой, так что ХЗ, что там))
 	lowp vec4 sky;
 	switch (int(DAY_TIME.x))
 	{
