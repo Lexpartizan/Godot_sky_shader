@@ -38,7 +38,9 @@ func _process(delta):
 		$sky_viewport/sky_texture.material.set(\"shader_param/LIGHTTING_POS\",lighting_pos);
 		$sky_viewport/sky_texture.material.set(\"shader_param/LIGHTING_STRENGTH\",Vector3(lighting_stength,lighting_stength,lighting_stength));
 		
-
+func _height_chg(value):
+	$sky_viewport/sky_texture.material.set(\"shader_param/HEIGHT\",value)
+	
 func _cov_scb(value):
 	coverage = value
 	$sky_viewport/sky_texture.material.set(\"shader_param/COVERAGE\",coverage)
@@ -48,7 +50,6 @@ func _cov_scb(value):
 
 func _quality_scb(value):
 	$sky_viewport/sky_texture.material.set(\"shader_param/STEPS\",clamp (value,2,100))
-	print(value)
 
 func _wind(value):
 	$sky_viewport/sky_texture.material.set(\"shader_param/WIND\",Vector3(wind_dir.x,0.0,wind_dir.y).normalized()*value)
@@ -104,14 +105,13 @@ func _DAY_TIME_changed(value):
 		light_energy=clamp(0.5-day_time.y/2,0.05,0.5)
 		light_color=lerp(moon_light, sunset_light,light_energy*2.0)
 	day_time.x = temp;
+	$sky_viewport/sky_texture.material.set(\"shader_param/DAY_TIME\",day_time)
 	light_energy = light_energy *(1-coverage*0.5)
 	$Sun_Moon.light_energy = light_energy
 	$Sun_Moon.light_color = light_color
 	$Env.environment.ambient_light_energy = light_energy
 	$Env.environment.ambient_light_color = light_color
 	$Env.environment.adjustment_saturation = 1-coverage*0.5
-		
-	$sky_viewport/sky_texture.material.set(\"shader_param/DAY_TIME\",day_time)
 "
 
 [sub_resource type="ShaderMaterial" id=2]
@@ -122,6 +122,7 @@ shader_param/DAY_TIME = null
 shader_param/SUN_POS = null
 shader_param/MOON_POS = null
 shader_param/COVERAGE = 0.5
+shader_param/HEIGHT = 0.35
 shader_param/THICKNESS = 25.0
 shader_param/ABSORPTION = 1.0
 shader_param/STEPS = 25
@@ -168,20 +169,42 @@ __meta__ = {
 }
 
 [node name="Label" type="Label" parent="Control"]
-margin_left = 16.6635
-margin_top = 417.404
-margin_right = 259.664
-margin_bottom = 431.404
+margin_left = 14.5021
+margin_top = 363.368
+margin_right = 257.503
+margin_bottom = 377.368
 text = "Control: Press G and move sliders."
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
+[node name="Label2" type="Label" parent="Control"]
+margin_left = 15.5002
+margin_top = 448.335
+margin_right = 64.5002
+margin_bottom = 462.335
+custom_colors/font_color = Color( 1, 1, 1, 1 )
+text = "HEIGHT"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="HScrollBar" type="HScrollBar" parent="Control/Label2"]
+margin_left = 5.0
+margin_top = 16.0
+margin_right = 142.0
+margin_bottom = 28.0
+max_value = 1.0
+value = 0.35
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
 [node name="Label3" type="Label" parent="Control"]
-margin_left = 13.6943
-margin_top = 441.248
-margin_right = 81.6943
-margin_bottom = 455.248
+margin_left = 14.2347
+margin_top = 415.311
+margin_right = 82.2347
+margin_bottom = 429.311
 text = "COVERAGE"
 __meta__ = {
 "_edit_use_anchors_": false
@@ -269,6 +292,7 @@ text = "lighting stirke"
 __meta__ = {
 "_edit_use_anchors_": false
 }
+[connection signal="value_changed" from="Control/Label2/HScrollBar" to="." method="_height_chg"]
 [connection signal="value_changed" from="Control/Label3/HScrollBar" to="." method="_cov_scb"]
 [connection signal="value_changed" from="Control/Label6/HScrollBar" to="." method="_quality_scb"]
 [connection signal="value_changed" from="Control/Label7/HScrollBar" to="." method="_DAY_TIME_changed"]
