@@ -13,8 +13,8 @@ var moon_light :Color = Color(0.6,0.6,0.8,1.0)
 var sunset_light :Color = Color(1.0,0.7,0.55,1.0)
 var light_color :Color = Color(1.0,1.0,1.0,1.0)
 var light_energy: float = 0.05
-var sun_pos: Vector3=Vector3(0.0,-1.0,0.0)
-var moon_pos: Vector3=Vector3(0.0,1.0,0.0)
+var sun_pos: Vector3
+var moon_pos: Vector3
 var lighting_pos: Vector3=Vector3(0.0,1.0,1.0)
 var wind_dir: Vector2=Vector2(1.0,0.0)
 var lighting_strike: bool = false
@@ -69,8 +69,8 @@ func _DAY_TIME_changed(value):
 	day_time.y = fmod(time_off_day,0.0835)*12.0; #Время в периоде в диапазоне от 0 до 1.
 	var phi: float =0.0;
 	phi = ((day_time.x-1.0) *30.0+day_time.y *30.0)*0.0174533
-	sun_pos = Vector3(0.0,-1.0,0.0).rotated(Vector3(1.0,0.0,0.0),phi)
-	moon_pos = Vector3(0.0,1.0,0.0).rotated(Vector3(1.0,0.0,0.0),phi)
+	sun_pos = Vector3(0.0,-1.0,0.0).normalized().rotated(Vector3(1.0,0.0,0.0).normalized(),phi) #тут можно изменять положение Солнца и вокруг какой оси его крутить.
+	moon_pos = Vector3(0.0,1.0,0.0).normalized().rotated(Vector3(1.0,0.0,0.0).normalized(),phi)
 	$sky_viewport/sky_texture.material.set(\"shader_param/SUN_POS\",sun_pos)
 	$sky_viewport/sky_texture.material.set(\"shader_param/MOON_POS\",moon_pos)
 	var temp: float =0.0
@@ -92,8 +92,7 @@ func _DAY_TIME_changed(value):
 	if (day_time.x == 5.0 or day_time.x == 6.0 or day_time.x == 7.0 or day_time.x == 8.0):
 		temp = 3.0 #день
 		$Sun_Moon.look_at_from_position(sun_pos,Vector3.ZERO,Vector3.UP);
-		light_energy =1.0# - coverage*0.6
-		#$Env.environment.adjustment_saturation = light_energy
+		light_energy =1.0
 	if (day_time.x == 9.0):
 		temp = 4.0 #от дня к закату
 		$Sun_Moon.look_at_from_position(sun_pos,Vector3.ZERO,Vector3.UP);
