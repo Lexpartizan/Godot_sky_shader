@@ -226,7 +226,7 @@ void fragment(){
 				cld.rgb = mix (cld.rgb, vec3(0.0), DAY_TIME.y); //постепенно затемняем с закатом
 				break;
 				}
-	};
+	}
 	if (LIGHTING_STRENGTH.r >0.1)
 	{
 		lowp vec3 lighting_amount = LIGHTING_STRENGTH * min(pow(max(dot(rd,LIGHTTING_POS), 0.0), 20.0) * 1.6, 1.0);
