@@ -66,7 +66,7 @@ func _DAY_TIME_changed(value):
 	time_off_day = value;
 	var day_time: Vector2 = Vector2()
 	day_time.x = floor(time_off_day/0.0835) #Период дня
-	day_time.y = fmod(time_off_day,0.0835)*12.0; #Время в периоде в диапазоне от 0 до 1.
+	day_time.y = clamp(fmod(time_off_day,0.0835)*12.0,0.01,0.99); #Время в периоде в диапазоне от 0 до 1.
 	var phi: float =0.0;
 	phi = ((day_time.x-1.0) *30.0+day_time.y *30.0)*0.0174533
 	sun_pos = Vector3(0.0,-1.0,0.0).normalized().rotated(Vector3(1.0,0.0,0.0).normalized(),phi) #тут можно изменять положение Солнца и вокруг какой оси его крутить.
@@ -104,6 +104,8 @@ func _DAY_TIME_changed(value):
 		light_energy=clamp(0.5-day_time.y/2,0.05,0.5)
 		light_color=lerp(moon_light, sunset_light,light_energy*2.0)
 	day_time.x = temp;
+	print (day_time)
+	
 	$sky_viewport/sky_texture.material.set(\"shader_param/DAY_TIME\",day_time)
 	light_energy = light_energy *(1-coverage*0.5)
 	$Sun_Moon.light_energy = light_energy
@@ -133,8 +135,8 @@ shader_param/sunset_color_horizon = Color( 0.8, 0.34902, 0.101961, 1 )
 shader_param/day_color_sky = Color( 0, 0.101961, 0.4, 1 )
 shader_param/day_color_horizon = Color( 0.3, 0.6, 0.8, 1 )
 shader_param/sun_color = Color( 1, 0.705882, 0.54902, 1 )
-shader_param/moon_color = Color( 0.588235, 0.588235, 0.784314, 1 )
-shader_param/iChannel0 = ExtResource( 4 )
+shader_param/moon_color = Color( 0.929412, 0.937255, 0.811765, 1 )
+shader_param/Noise = ExtResource( 4 )
 
 [sub_resource type="ImageTexture" id=3]
 size = Vector2( 1024, 1024 )
