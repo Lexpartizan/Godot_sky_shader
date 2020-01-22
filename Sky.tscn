@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=2]
+[gd_scene load_steps=8 format=2]
 
 [ext_resource path="res://shaders/Sky.shader" type="Shader" id=3]
 [ext_resource path="res://shaders/noise.png" type="Texture" id=4]
@@ -104,7 +104,7 @@ func _DAY_TIME_changed(value):
 		light_energy=clamp(0.5-day_time.y/2,0.05,0.5)
 		light_color=lerp(moon_light, sunset_light,light_energy*2.0)
 	day_time.x = temp;
-	print (day_time)
+	#print (day_time)
 	
 	$sky_viewport/sky_texture.material.set(\"shader_param/DAY_TIME\",day_time)
 	light_energy = light_energy *(1-coverage*0.5)
@@ -113,6 +113,10 @@ func _DAY_TIME_changed(value):
 	$Env.environment.ambient_light_energy = light_energy
 	$Env.environment.ambient_light_color = light_color
 	$Env.environment.adjustment_saturation = 1-coverage*0.5
+
+
+func _moon(value):
+	$sky_viewport/sky_texture.material.set(\"shader_param/MOON_PHASE\",value)
 "
 
 [sub_resource type="ShaderMaterial" id=2]
@@ -122,6 +126,7 @@ shader_param/WIND = Vector3( 0, 0, 0.1 )
 shader_param/DAY_TIME = null
 shader_param/SUN_POS = null
 shader_param/MOON_POS = null
+shader_param/MOON_PHASE = -0.2
 shader_param/COVERAGE = 0.5
 shader_param/HEIGHT = 0.35
 shader_param/THICKNESS = 25.0
@@ -140,6 +145,9 @@ shader_param/Noise = ExtResource( 4 )
 
 [sub_resource type="ImageTexture" id=3]
 size = Vector2( 1024, 1024 )
+
+[sub_resource type="ViewportTexture" id=4]
+viewport_path = NodePath("sky_viewport")
 
 [node name="Sky" type="Spatial"]
 script = SubResource( 1 )
@@ -293,6 +301,27 @@ text = "lighting stirke"
 __meta__ = {
 "_edit_use_anchors_": false
 }
+
+[node name="Label4" type="Label" parent="Control"]
+margin_left = 22.1606
+margin_top = 384.487
+margin_right = 100.161
+margin_bottom = 398.487
+text = "Moon Phase"
+
+[node name="HScrollBar" type="HScrollBar" parent="Control/Label4"]
+margin_left = -1.95068
+margin_top = 17.8521
+margin_right = 135.049
+margin_bottom = 29.8521
+min_value = -0.2
+max_value = 0.2
+value = -0.2
+
+[node name="Sprite" type="Sprite" parent="."]
+visible = false
+position = Vector2( 741.492, 370.746 )
+texture = SubResource( 4 )
 [connection signal="value_changed" from="Control/Label2/HScrollBar" to="." method="_height_chg"]
 [connection signal="value_changed" from="Control/Label3/HScrollBar" to="." method="_cov_scb"]
 [connection signal="value_changed" from="Control/Label6/HScrollBar" to="." method="_quality_scb"]
@@ -300,3 +329,4 @@ __meta__ = {
 [connection signal="value_changed" from="Control/Label8/HScrollBar" to="." method="_wind"]
 [connection signal="button_down" from="Control/Button" to="." method="_lighting_on"]
 [connection signal="button_up" from="Control/Button" to="." method="_lighting_off"]
+[connection signal="value_changed" from="Control/Label4/HScrollBar" to="." method="_moon"]
