@@ -90,7 +90,7 @@ bool SphereIntersect(vec3 apos, float arad, vec3 ro, vec3 rd, out vec3 norm) {
 lowp float density(vec3 pos, vec3 offset){
 	lowp vec3 p = pos * 0.0212242 + offset;
 	float dens = get_noise(p,2.76434);
-	lowp float cov = 1.0 - clamp(COVERAGE,0.3,1.0);
+	lowp float cov = 1.0 - clamp(COVERAGE,0.2,1.0);
 	dens *= smoothstep (cov, cov + .05, dens);
 	return clamp(dens, 0.0, 1.0);	
 }
@@ -213,7 +213,7 @@ void fragment(){
 	{
 		case 0: {
 				sky.rgb = mix (sky.rgb, vec3(0.0), 0.99); //затемняем
-				if (cld.rgb == vec3 (0.0)) sky += draw_night_sky(0.99,sun_amount,rd);//Если нет облаков, рисуем ночное небо
+				if (cld.a == 0.0) sky += draw_night_sky(0.99,sun_amount,rd);//Если нет облаков, рисуем ночное небо
 				else cld.rgb = mix (cld.rgb, vec3(0.0), 0.99); //затемняем облака
 				break;
 				}
@@ -221,7 +221,7 @@ void fragment(){
 		case 1: {lowp float moon_dist = length(MOON_POS-rd);
 				sky = mix(mix(night_color_sky, sunset_color_horizon, DAY_TIME.y), mix(night_color_sky, sunset_color_sky, DAY_TIME.y),rd.y) + sun_amount;
 				sky.rgb = mix (vec3(0.0), sky.rgb, DAY_TIME.y); //постепенно осветляем с рассветом
-				if (cld.rgb == vec3 (0.0)) sky += draw_night_sky(1.0-DAY_TIME.y,sun_amount,rd);//Если нет облаков, рисуем ночное небо
+				if (cld.a == 0.0) sky += draw_night_sky(1.0-DAY_TIME.y,sun_amount,rd);//Если нет облаков, рисуем ночное небо
 				else cld.rgb = mix (vec3(0.0), cld.rgb, DAY_TIME.y); //постепенно осветляем с рассветом облака
 				break;
 				}
@@ -231,7 +231,7 @@ void fragment(){
 		case 5: {
 				sky = mix(mix(sunset_color_horizon, night_color_sky, DAY_TIME.y), mix(sunset_color_sky, night_color_sky, DAY_TIME.y),rd.y) + sun_amount;
 				sky = vec4 (mix (sky.rgb, vec3(0.0), DAY_TIME.y),1.0); //постепенно затемняем с закатом
-				if (cld.rgb == vec3 (0.0)) sky += draw_night_sky(DAY_TIME.y,sun_amount,rd);//Если нет облаков, рисуем ночное небо
+				if (cld.a == 0.0) sky += draw_night_sky(DAY_TIME.y,sun_amount,rd);//Если нет облаков, рисуем ночное небо
 				else cld.rgb = mix (cld.rgb, vec3(0.0), DAY_TIME.y); //постепенно затемняем с закатом
 				break;
 				}
