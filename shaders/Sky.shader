@@ -23,6 +23,7 @@ uniform vec4 day_color_sky: hint_color;
 uniform vec4 day_color_horizon: hint_color;
 uniform vec4 sun_color: hint_color;
 uniform vec4 moon_color: hint_color;
+uniform vec4 clouds_color: hint_color;
 
 const float moon_radius = 0.07;
 //for 2d clouds
@@ -209,6 +210,7 @@ void fragment(){
     cld*=clamp((  1.0 - exp(-1.3 * pow(max((0.0), horizonPow), (2.6)))),0.,1.);
     }
 	lowp vec4 sky;
+	cld*=clouds_color;
 	switch (int(DAY_TIME.x))
 	{
 		case 0: {
