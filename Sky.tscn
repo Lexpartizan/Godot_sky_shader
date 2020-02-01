@@ -141,6 +141,7 @@ shader_param/day_color_sky = Color( 0, 0.101961, 0.4, 1 )
 shader_param/day_color_horizon = Color( 0.3, 0.6, 0.8, 1 )
 shader_param/sun_color = Color( 1, 0.705882, 0.54902, 1 )
 shader_param/moon_color = Color( 0.929412, 0.937255, 0.811765, 1 )
+shader_param/clouds_color = Color( 1, 1, 1, 1 )
 shader_param/Noise = ExtResource( 4 )
 
 [sub_resource type="ImageTexture" id=3]
