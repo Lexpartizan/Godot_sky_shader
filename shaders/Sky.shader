@@ -24,11 +24,7 @@ uniform vec4 day_color_horizon: hint_color;
 uniform vec4 sun_color: hint_color;
 uniform vec4 moon_color: hint_color;
 uniform vec4 clouds_color: hint_color;
-
-const float moon_radius = 0.07;
-//for 2d clouds
-const float CLOUD_LOWER=7000.0;
-const float CLOUD_UPPER=9000.0;
+uniform float moon_radius;
 
 lowp vec3 rotate_y(vec3 v, float angle)
 {
@@ -133,7 +129,7 @@ lowp vec3 cube_bot(vec3 p, vec3 c1, vec3 c2)
 	return  f* mix(c1, c2, p * .5 + .5);
 }
 
-lowp float MapSH(vec3 p, float cloudy, vec3 offset)
+lowp float MapSH(vec3 p, float cloudy, vec3 offset, float CLOUD_UPPER)
 {
 	lowp float h = -(get_noise(p*0.0003+offset, 2.76434)-cloudy-.6);
     h *= smoothstep((HEIGHT+0.1)*CLOUD_UPPER+100., (HEIGHT+0.1)*CLOUD_UPPER, p.y);
@@ -142,6 +138,8 @@ lowp float MapSH(vec3 p, float cloudy, vec3 offset)
 
 lowp vec4 clouds_2d(vec3 rd,vec3 wind)
 {
+	lowp float CLOUD_LOWER=7000.0;
+	lowp float CLOUD_UPPER=9000.0;
 	lowp float cloudy = COVERAGE -0.5;
 	lowp float beg = (((HEIGHT+0.1)*CLOUD_LOWER) / rd.y);
 	lowp float end = (((HEIGHT+0.1)*CLOUD_UPPER) / rd.y);
@@ -152,9 +150,9 @@ lowp vec4 clouds_2d(vec3 rd,vec3 wind)
 	for (int i = 0; i < min(STEPS,5); i++)
 	{
 		if (shadeSum.y >= 1.0) break;
-		lowp float h = MapSH(p,cloudy,wind);
+		lowp float h = MapSH(p,cloudy,wind,CLOUD_UPPER);
 		shade.y = max(h, 0.0); 
-        shade.x = clamp(-(h-MapSH(p+MOON_POS*200.0, cloudy,wind))*2., 0.05, 1.0);//Тут магия с shadertoy, позиция Луны, потому что освещать облака надо снизу, а Солнце сверху.
+        shade.x = clamp(-(h-MapSH(p+MOON_POS*200.0, cloudy,wind,CLOUD_UPPER))*2., 0.05, 1.0);//Тут магия с shadertoy, позиция Луны, потому что освещать облака надо снизу, а Солнце сверху.
 		shadeSum += shade * (1.0 - shadeSum.y);
 		p += add;
 	}
@@ -164,7 +162,7 @@ lowp vec4 clouds_2d(vec3 rd,vec3 wind)
 }
 
 
-lowp vec4 draw_night_sky (float attenuation, vec4 sun_amount, vec3 rd)
+lowp vec4 draw_night_sky (float attenuation, vec4 sun_amount, vec3 rd, float cld_alpha)
 {
 	lowp float dist =length(MOON_POS-rd);
 	lowp vec4 night_sky = vec4(0.0);
@@ -172,12 +170,12 @@ lowp vec4 draw_night_sky (float attenuation, vec4 sun_amount, vec3 rd)
 	{
 		float moon_amount = min(mix(smoothstep(0.35,0.999,get_noise(MOON_POS - rd, 2.76434)),0.0,smoothstep(moon_radius*0.9, moon_radius, dist)),attenuation);
 		moon_amount = clamp(mix (0.0,moon_amount,smoothstep(0.9,1.0,0.75+length(MOON_POS-rd+MOON_PHASE))),0.003,0.99);
-		night_sky = moon_color*moon_amount;
+		night_sky = moon_color*moon_amount*(clamp(1.0-cld_alpha-0.2,0.0,1.0));
 	}
 	else 
 	{
-	if (sun_amount.r<0.01)//Если свет от Солнца не затмевает звёзды на рассвете/закате
-		if (rand(rd.zx) - rd.y*0.0033> 0.996) //Рисуем звёзды
+	if (sun_amount.r<0.01 && cld_alpha == 0.0)//Если свет от Солнца не затмевает звёзды на рассвете/закате или не закрывают облака
+		if (rand(rd.zx) - rd.y*0.0033> 0.996) //Рисуем звёзды, при этом вверху рисуем их меньше, так как при такой проекции текстуры так получается равномернее
 		{
 		lowp float stars = rand(rd.zy)*0.5;
 		stars = clamp(sin(iTime*3.0+stars*10.0),0.1,stars);
@@ -211,33 +209,28 @@ void fragment(){
     }
 	lowp vec4 sky;
 	cld*=clouds_color;
-	switch (int(DAY_TIME.x))
-	{
-		case 0: {
-				sky.rgb = mix (sky.rgb, vec3(0.0), 0.99); //затемняем
-				if (cld.a == 0.0) sky += draw_night_sky(0.99,sun_amount,rd);//Если нет облаков, рисуем ночное небо
-				else cld.rgb = mix (cld.rgb, vec3(0.0), 0.99); //затемняем облака
-				break;
-				}
-		
-		case 1: {lowp float moon_dist = length(MOON_POS-rd);
-				sky = mix(mix(night_color_sky, sunset_color_horizon, DAY_TIME.y), mix(night_color_sky, sunset_color_sky, DAY_TIME.y),rd.y) + sun_amount;
-				sky.rgb = mix (vec3(0.0), sky.rgb, DAY_TIME.y); //постепенно осветляем с рассветом
-				if (cld.a == 0.0) sky += draw_night_sky(1.0-DAY_TIME.y,sun_amount,rd);//Если нет облаков, рисуем ночное небо
-				else cld.rgb = mix (vec3(0.0), cld.rgb, DAY_TIME.y); //постепенно осветляем с рассветом облака
-				break;
-				}
-		case 2: {sky = mix(mix(sunset_color_horizon, day_color_horizon, DAY_TIME.y), mix(sunset_color_sky, day_color_sky, DAY_TIME.y),rd.y) + sun_amount;break;}
-		case 3: {sky = mix(day_color_horizon, day_color_sky, rd.y) + sun_amount; break;}
-		case 4: {sky = mix(mix(day_color_horizon, sunset_color_horizon, DAY_TIME.y), mix(day_color_sky, sunset_color_sky, DAY_TIME.y),rd.y) + sun_amount;break;}
-		case 5: {
-				sky = mix(mix(sunset_color_horizon, night_color_sky, DAY_TIME.y), mix(sunset_color_sky, night_color_sky, DAY_TIME.y),rd.y) + sun_amount;
-				sky = vec4 (mix (sky.rgb, vec3(0.0), DAY_TIME.y),1.0); //постепенно затемняем с закатом
-				if (cld.a == 0.0) sky += draw_night_sky(DAY_TIME.y,sun_amount,rd);//Если нет облаков, рисуем ночное небо
-				else cld.rgb = mix (cld.rgb, vec3(0.0), DAY_TIME.y); //постепенно затемняем с закатом
-				break;
-				}
-	}
+	
+	if (DAY_TIME.x==0.0) 
+		{	sky.rgb = mix (sky.rgb, vec3(0.0), 0.99); //затемняем
+			sky += draw_night_sky(0.99,sun_amount,rd,cld.a);
+			cld.rgb = mix (cld.rgb, vec3(0.0), 0.99); //затемняем облака
+		}
+	if (DAY_TIME.x==1.0) 
+		{	lowp float moon_dist = length(MOON_POS-rd);
+			sky = mix(mix(night_color_sky, sunset_color_horizon, DAY_TIME.y), mix(night_color_sky, sunset_color_sky, DAY_TIME.y),rd.y) + sun_amount;
+			sky.rgb = mix (vec3(0.0), sky.rgb, DAY_TIME.y); //постепенно осветляем с рассветом небо
+			sky += draw_night_sky(1.0-DAY_TIME.y,sun_amount,rd,cld.a);
+			cld.rgb = mix (vec3(0.0), cld.rgb, DAY_TIME.y); //постепенно осветляем с рассветом облака
+		}
+	if (DAY_TIME.x==2.0) {sky = mix(mix(sunset_color_horizon, day_color_horizon, DAY_TIME.y), mix(sunset_color_sky, day_color_sky, DAY_TIME.y),rd.y) + sun_amount;}
+	if (DAY_TIME.x==3.0) {sky = mix(day_color_horizon, day_color_sky, rd.y) + sun_amount;}
+	if (DAY_TIME.x==4.0) {sky = mix(mix(day_color_horizon, sunset_color_horizon, DAY_TIME.y), mix(day_color_sky, sunset_color_sky, DAY_TIME.y),rd.y) + sun_amount;}
+	if (DAY_TIME.x==5.0) 
+		{	sky = mix(mix(sunset_color_horizon, night_color_sky, DAY_TIME.y), mix(sunset_color_sky, night_color_sky, DAY_TIME.y),rd.y) + sun_amount;
+			sky.rgb = mix (sky.rgb, vec3(0.0), DAY_TIME.y); //постепенно затемняем с закатом небо
+			sky += draw_night_sky(DAY_TIME.y,sun_amount,rd,cld.a);//рисуем ночное небо
+			cld.rgb = mix (cld.rgb, vec3(0.0), DAY_TIME.y); //постепенно затемняем с закатом облака
+		}
 	if (LIGHTING_STRENGTH.r >0.1)
 	{
 		lowp vec3 lighting_amount = LIGHTING_STRENGTH * min(pow(max(dot(rd,LIGHTTING_POS), 0.0), 100.0) * 1.0, 1.0);
