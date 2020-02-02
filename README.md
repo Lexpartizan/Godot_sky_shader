@@ -41,9 +41,9 @@ Your own scene needs
   * Sky: PanoramaSky
 * a light, e.g. a directional light
 * one Viewport, with a child node of type Sprite, for the sky texture
-  * in the CanvasItem section: create a new ShaderMaterial and assign the CloudlessShader.shader to it
+  * inside of the Sprite, in the CanvasItem section: create a new ShaderMaterial and assign the CloudlessSky.shader to it
 * another Viewport, with a child node of type Sprite, for the cloud texture (if you want clouds)
-  * in the CanvasItem section: create a new ShaderMaterial and assign the Clouds.shader to it
+  * inside of the Sprite, in the CanvasItem section: create a new ShaderMaterial and assign the Clouds.shader to it
 
 # Known Issues
 
