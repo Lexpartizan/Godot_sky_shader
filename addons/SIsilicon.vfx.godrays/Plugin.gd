@@ -18,7 +18,6 @@ func _enter_tree() -> void:
 
 func _exit_tree() -> void:
 	remove_custom_type("GodRays")
-	
 	print("GodRaysPlugin has been deactivated.")
 
 func create_project_setting(setting : String, default, type : int, hint : String) -> void:
