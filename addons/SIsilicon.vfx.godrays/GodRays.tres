@@ -1,0 +1,124 @@
+[gd_resource type="ShaderMaterial" load_steps=3 format=2]
+
+[ext_resource path="res://addons/SIsilicon.vfx.godrays/dith_4k.png" type="Texture" id=1]
+
+[sub_resource type="Shader" id=1]
+code = "shader_type spatial;
+render_mode unshaded, cull_disabled, skip_vertex_transform, blend_add;
+
+uniform vec4 light_color: hint_color;
+uniform vec3 light_pos;
+uniform float size = 1.0;
+uniform int light_type = 0; //0 = directional, 1 = omni
+
+uniform float exposure: hint_range(0,2);
+uniform float attenuate = 1.0;
+
+uniform sampler2D clouds : hint_albedo;
+uniform sampler2D dith_4k : hint_albedo;
+uniform bool use_clouds = false;
+
+uniform int num_samples = 100;
+uniform float dither = 1.0;
+uniform bool use_pcf5 = true;
+
+varying mat4 inv_project_mat;
+varying vec4 light_screen_pos;
+varying vec3 camera_pos;
+varying float far_plane;
+varying float attenuate_size;
+
+void vertex() {
+	light_screen_pos = INV_CAMERA_MATRIX * vec4(light_pos, float(light_type));
+	attenuate_size = 1.0 / length(light_screen_pos) * size;
+	
+	light_screen_pos = PROJECTION_MATRIX * light_screen_pos;
+	light_screen_pos.xyz /= light_screen_pos.w;
+	light_screen_pos.xy = light_screen_pos.xy * 0.5 + 0.5;
+	light_screen_pos.z = -(INV_CAMERA_MATRIX * vec4(light_pos, float(light_type))).z;
+	
+	camera_pos = CAMERA_MATRIX[3].xyz;
+	inv_project_mat = INV_PROJECTION_MATRIX;
+	vec4 _far_plane = (INV_PROJECTION_MATRIX * vec4(0,0,1,1));
+	far_plane = -_far_plane.z / _far_plane.w;
+	
+	POSITION = vec4(VERTEX.xy, -1.0, 1.0);
+}
+
+
+vec4 texture_panorama(sampler2D tex, vec3 ray) {
+	float u = atan(ray.x, ray.z) / (2.0 * 3.141592653) + 0.5;
+	float v = asin(ray.y) / 3.141592653 + 0.5;
+	return texture(tex, vec2(u, 1.0 - v));
+}
+
+float sun_light(sampler2D depth, vec3 ray_o, vec2 uv, mat4 inv_cam_matrix) {
+	float light_depth = mix(light_screen_pos.z, far_plane, float(1-light_type));
+	float depth_fl = clamp(uv, 0.0, 1.0) == uv ? texture(depth, uv).r : 1.0;
+	vec4 ray_d = inv_project_mat * vec4(uv*2.0-1.0, depth_fl*2.0-1.0, 1.0);
+	depth_fl=-ray_d.z/ray_d.w;
+	float is_obstacle = float(depth_fl < light_depth);
+	ray_d.xyz/=ray_d.w;
+	ray_d.w =0.0;
+	ray_d=normalize(ray_d)*inv_cam_matrix;
+			
+	if(use_clouds) {
+		float temp = texture_panorama(clouds, ray_d.xyz).a;
+		if (temp<0.7) temp = 0.0;
+		//if(temp >0.5) temp = 1.0;
+		is_obstacle = min(is_obstacle + temp, 1.0);
+	}
+	
+	float sun = 0.0;
+	if(light_type == 0) {
+		sun = smoothstep(1.0, 0.0, acos(dot(light_pos, ray_d.xyz)) / 1.5707963265 / size); //1.5707963265 = 3.14/2
+	} else if(light_type == 1) {
+		sun = smoothstep(1.0, 0.0, acos(dot(normalize(light_pos - ray_o), ray_d.xyz)) / 1.5707963265 / attenuate_size);
+	}
+	sun *= 1.0 - is_obstacle;
+	return max(sun, 0.0);
+}
+
+float variable_smoothstep(float x, float N) 
+	{
+	if(N > 0.0) {return pow(x, N);} 
+	else if(N < 0.0) 
+		{
+			if(x <= 0.5) {return pow(2.0*x, -N) / 2.0;}
+			else {return 1.0 - pow(2.0*(1.0-x), -N) / 2.0;}
+		}
+	return 0.0;
+	}
+
+
+void fragment() {
+	if(length(light_color) <= 0.001)
+		discard;
+	vec2 screen_uv = SCREEN_UV;
+	vec2 delta_uv = (light_screen_pos.xy - screen_uv) / (float(num_samples));
+	
+	float light = 0.0;
+	screen_uv += delta_uv * dither * textureLod(dith_4k,UV,0.0).r;
+	for(int i = 0; i < num_samples; i++) {
+		float sample = sun_light(DEPTH_TEXTURE, camera_pos, screen_uv,INV_CAMERA_MATRIX);
+		light += sample;
+		screen_uv += delta_uv;
+	}
+	vec3 light_dir = light_type == 0 ? light_pos : normalize(light_pos - camera_pos);
+	ALBEDO = variable_smoothstep(light / float(num_samples), attenuate) * exposure * light_color.rgb ;	
+}"
+
+[resource]
+render_priority = 14
+shader = SubResource( 1 )
+shader_param/light_color = null
+shader_param/light_pos = null
+shader_param/size = 1.0
+shader_param/light_type = 0
+shader_param/exposure = null
+shader_param/attenuate = 1.0
+shader_param/use_clouds = true
+shader_param/num_samples = 100
+shader_param/dither = 1.0
+shader_param/use_pcf5 = false
+shader_param/dith_4k = ExtResource( 1 )
