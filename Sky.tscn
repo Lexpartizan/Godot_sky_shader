@@ -1,7 +1,8 @@
-[gd_scene load_steps=10 format=2]
+[gd_scene load_steps=11 format=2]
 
 [ext_resource path="res://shaders/Sky.shader" type="Shader" id=1]
 [ext_resource path="res://shaders/Clouds.shader" type="Shader" id=2]
+[ext_resource path="res://GodRays.tscn" type="PackedScene" id=3]
 [ext_resource path="res://shaders/noise.png" type="Texture" id=4]
 [ext_resource path="res://default_env.tres" type="Environment" id=6]
 
@@ -23,12 +24,13 @@ var wind_dir: Vector2=Vector2(1.0,0.0)
 var lighting_strike: bool = false
 var time_off_day: float = 0.0 #from 0 to 1
 var coverage: float = 0.5
-var god_rays = load(\"res://GodRays.tscn\")
+export (PackedScene) var god_rays
 
 func _ready():
-	god_rays =god_rays.instance()
 	if not show_controls:
 		$Control.queue_free()
+	if god_rays:
+		god_rays =god_rays.instance()
 	$Env.environment.background_sky.set_panorama($sky_viewport.get_texture())
 	_DAY_TIME_changed(time_off_day)
 
@@ -65,7 +67,8 @@ func _cov_scb(value):
 
 func _quality_scb(value):
 	$cloud_viewport/cloud_texture.material.set(\"shader_param/STEPS\",clamp (value,2,100))
-	god_rays.set_steps(clamp(value,30,100))
+	#god_rays.set_steps(clamp(value,30,100))
+	god_rays.set_steps(100)
 	
 func _wind(value):
 	$cloud_viewport/cloud_texture.material.set(\"shader_param/WIND\",Vector3(wind_dir.x,0.0,wind_dir.y).normalized()*value)
@@ -135,6 +138,8 @@ func _set_light_size(value):
 	god_rays.set_light_size(value)
 
 func _godrays_toggled(button_pressed):
+	if not god_rays:
+		return
 	if button_pressed:
 		add_child(god_rays)
 		god_rays.light = get_node(\"Sun_Moon\")
@@ -191,6 +196,7 @@ shader_param/cloud_env_texture = SubResource( 4 )
 
 [node name="Sky" type="Spatial"]
 script = SubResource( 1 )
+god_rays = ExtResource( 3 )
 
 [node name="Env" type="WorldEnvironment" parent="."]
 environment = ExtResource( 6 )
