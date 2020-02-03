@@ -26,6 +26,10 @@ window/size/width=1280
 window/size/height=720
 window/size/always_on_top=true
 
+[editor_plugins]
+
+enabled=PoolStringArray( "SIsilicon.vfx.godrays" )
+
 [input]
 
 move_forward={
@@ -80,3 +84,6 @@ threads/thread_model=2
 vram_compression/import_etc=true
 vram_compression/import_etc2=false
 environment/default_environment="res://default_env.tres"
+quality/godrays/sample_number=50
+quality/godrays/use_pcf5=false
+quality/godrays/dither_amount=1.0
