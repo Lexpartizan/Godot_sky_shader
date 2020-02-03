@@ -1,4 +1,4 @@
-#tool
+tool
 extends Spatial
 
 var light : Light
@@ -38,11 +38,8 @@ func _ready() -> void:
 	set_exposure(exposure)
 	set_attenuation(attenuation)
 	set_light_size(light_size)
-	set_clouds(clouds)
-	material.set_shader_param("num_samples", ProjectSettings.get_setting("rendering/quality/godrays/sample_number"))
-	material.set_shader_param("use_pcf5", ProjectSettings.get_setting("rendering/quality/godrays/use_pcf5"))
-	material.set_shader_param("dither", ProjectSettings.get_setting("rendering/quality/godrays/dither_amount"))
 	
+	set_clouds(null)
 
 func _process(delta : float) -> void:
 	if not light:
@@ -50,7 +47,6 @@ func _process(delta : float) -> void:
 		material.set_shader_param("light_pos", Vector3())
 		return
 	
-#	var light := get_node(light) as Light
 	var is_directional := light is DirectionalLight
 	
 	material.set_shader_param("light_type", not is_directional)
@@ -65,14 +61,9 @@ func _process(delta : float) -> void:
 		material.set_shader_param("light_pos", position)
 		material.set_shader_param("size", light_size * (light as OmniLight).omni_range)
 	
-	
-
-#func set_light(value : NodePath) -> void:
-#	light = value
-#	if get_child(0):
-#		get_child(0).visible = light != null
-func set_steps(value):
-	material.set_shader_param("num_samples", value)
+	material.set_shader_param("num_samples", ProjectSettings.get_setting("rendering/quality/godrays/sample_number"))
+	material.set_shader_param("use_pcf5", ProjectSettings.get_setting("rendering/quality/godrays/use_pcf5"))
+	material.set_shader_param("dither", ProjectSettings.get_setting("rendering/quality/godrays/dither_amount"))
 
 func set_exposure(value : float) -> void:
 	exposure = value
