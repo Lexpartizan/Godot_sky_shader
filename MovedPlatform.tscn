@@ -1,0 +1,65 @@
+[gd_scene load_steps=6 format=2]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends StaticBody
+
+export var offset_y: float = 2.5
+export var move_time: float = 5
+
+var start_pos_y: float
+var current_pos_y: float
+
+func _ready():
+	start_pos_y = self.translation.y
+	current_pos_y = start_pos_y
+	self.move()
+
+func move():
+	var tween = get_node(\"Tween\")
+	var to: float
+	if abs(current_pos_y - start_pos_y) < 0.1:
+		to = start_pos_y + offset_y
+	else:
+		to = start_pos_y
+	tween.interpolate_property(self, \"current_pos_y\", current_pos_y, to, move_time, Tween.TRANS_CUBIC, Tween.EASE_IN_OUT)
+	tween.interpolate_callback(self, move_time, \"move\")
+	tween.start()
+	
+func _physics_process(delta):
+	self.translation.y = current_pos_y
+"
+
+[sub_resource type="CubeMesh" id=2]
+size = Vector3( 2, 0.5, 4 )
+
+[sub_resource type="SpatialMaterial" id=3]
+albedo_color = Color( 0.137255, 0.227451, 0.352941, 1 )
+metallic = 0.44
+roughness = 0.52
+
+[sub_resource type="BoxShape" id=4]
+extents = Vector3( 1, 0.25, 2 )
+
+[sub_resource type="BoxShape" id=5]
+extents = Vector3( 0.98916, 0.291003, 1.98863 )
+
+[node name="MovedPlatform" type="StaticBody"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -6.946, 2.5, -12.691 )
+script = SubResource( 1 )
+
+[node name="Tween" type="Tween" parent="."]
+
+[node name="CSGMesh30" type="CSGMesh" parent="."]
+mesh = SubResource( 2 )
+material = SubResource( 3 )
+
+[node name="CollisionShape" type="CollisionShape" parent="."]
+transform = Transform( 1, 0, -9.31323e-10, -4.65661e-10, 1, 0, 9.31323e-10, -2.98023e-08, 1, 0, 0, 0 )
+shape = SubResource( 4 )
+
+[node name="Area" type="Area" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.17196, 0 )
+
+[node name="CollisionShape" type="CollisionShape" parent="Area"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.0385921, 0 )
+shape = SubResource( 5 )
