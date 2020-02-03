@@ -1,0 +1,459 @@
+[gd_scene load_steps=10 format=2]
+
+[ext_resource path="res://shaders/Sky.shader" type="Shader" id=1]
+[ext_resource path="res://shaders/Clouds.shader" type="Shader" id=2]
+[ext_resource path="res://shaders/noise.png" type="Texture" id=4]
+[ext_resource path="res://default_env.tres" type="Environment" id=6]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Spatial
+
+export(bool) var show_controls := true
+
+var iTime: float=0.0
+var sun_light :Color = Color(1.0,1.0,1.0,1.0)
+var moon_light :Color = Color(0.6,0.6,0.8,1.0)
+var sunset_light :Color = Color(1.0,0.7,0.55,1.0)
+var light_color :Color = Color(1.0,1.0,1.0,1.0)
+var light_energy: float = 0.05
+var sun_pos: Vector3
+var moon_pos: Vector3
+var lighting_pos: Vector3=Vector3(0.0,1.0,1.0)
+var wind_dir: Vector2=Vector2(1.0,0.0)
+var lighting_strike: bool = false
+var time_off_day: float = 0.0 #from 0 to 1
+var coverage: float = 0.5
+var god_rays = load(\"res://GodRays.tscn\")
+
+func _ready():
+	if not show_controls:
+		$Control.queue_free()
+	god_rays =god_rays.instance()
+	god_rays.light = get_node(\"Sun_Moon\")
+	god_rays.set_clouds(get_node(\"cloud_viewport\").get_texture())
+	$Env.environment.background_sky.set_panorama($sky_viewport.get_texture())
+	_DAY_TIME_changed(time_off_day)
+
+func _process(delta):
+	iTime+=delta
+	$sky_viewport/sky_texture.material.set(\"shader_param/iTime\",iTime)
+	$cloud_viewport/cloud_texture.material.set(\"shader_param/iTime\",iTime)
+	if (lighting_strike):
+		var lighting_stength = clamp(sin(iTime*31.4),0.1,1.0)
+		lighting_pos = lighting_pos.normalized()
+		$Sun_Moon.look_at_from_position(lighting_pos,Vector3.ZERO,Vector3.UP);
+		$Sun_Moon.light_color = sun_light
+		$Sun_Moon.light_energy = lighting_stength*2
+		$sky_viewport/sky_texture.material.set(\"shader_param/LIGHTTING_POS\",lighting_pos)
+		$sky_viewport/sky_texture.material.set(\"shader_param/LIGHTING_STRENGTH\",Vector3(lighting_stength,lighting_stength,lighting_stength))
+
+func _lighting_on():
+	lighting_strike = true
+
+func _lighting_off():
+	lighting_strike = false
+	$sky_viewport/sky_texture.material.set(\"shader_param/LIGHTING_STRENGTH\",Vector3(0.0,0.0,0.0))
+	_DAY_TIME_changed(time_off_day)
+		
+func _height_chg(value):
+	$cloud_viewport/cloud_texture.material.set(\"shader_param/HEIGHT\",value)
+		
+func _cov_scb(value):
+	coverage = value
+	$cloud_viewport/cloud_texture.material.set(\"shader_param/COVERAGE\",coverage)
+	$cloud_viewport/cloud_texture.material.set(\"shader_param/ABSORPTION\",coverage+0.75)
+	$cloud_viewport/cloud_texture.material.set(\"shader_param/THICKNESS\",coverage*10+10)
+	_DAY_TIME_changed(time_off_day)
+
+func _quality_scb(value):
+	$cloud_viewport/cloud_texture.material.set(\"shader_param/STEPS\",clamp (value,2,100))
+	god_rays.set_steps(clamp(value,30,100))
+	
+func _wind(value):
+	$cloud_viewport/cloud_texture.material.set(\"shader_param/WIND\",Vector3(wind_dir.x,0.0,wind_dir.y).normalized()*value)
+	
+func _DAY_TIME_changed(value):
+	time_off_day = value;
+	var day_time: Vector2 = Vector2()
+	day_time.x = floor(time_off_day/0.0835) #Период дня
+	day_time.y = clamp(fmod(time_off_day,0.0835)*12.0,0.01,0.99); #Время в периоде в диапазоне от 0 до 1.
+	var phi: float =0.0;
+	phi = ((day_time.x-1.0) *30.0+day_time.y *30.0)*0.0174533
+	sun_pos = Vector3(0.0,-1000.0,0.0).normalized().rotated(Vector3(1.0,0.0,0.0).normalized(),phi) #тут можно изменять положение Солнца и вокруг какой оси его крутить.
+	moon_pos = Vector3(0.0,1000.0,0.0).normalized().rotated(Vector3(1.0,0.0,0.0).normalized(),phi)
+	$sky_viewport/sky_texture.material.set(\"shader_param/SUN_POS\",sun_pos)
+	$sky_viewport/sky_texture.material.set(\"shader_param/MOON_POS\",moon_pos)
+	$cloud_viewport/cloud_texture.material.set(\"shader_param/MOON_POS\",moon_pos)
+	var temp: float =0.0
+	if (day_time.x == 0.0 or day_time.x == 1.0 or day_time.x == 2.0 or day_time.x == 11.0):
+		temp = 0.0 #ночь
+		$Sun_Moon.look_at_from_position(moon_pos,Vector3.ZERO,Vector3.UP);
+		light_energy = 0.05
+		light_color = moon_light
+	if (day_time.x == 3.0):
+		temp = 1.0 #от ночи к рассвету
+		$Sun_Moon.look_at_from_position(sun_pos,Vector3.ZERO,Vector3.UP);
+		light_energy=clamp(day_time.y/2,0.05,0.5)
+		light_color=lerp(moon_light,sunset_light,light_energy*2.0)
+	if (day_time.x == 4.0):
+		temp = 2.0 #от рассвета к дню
+		$Sun_Moon.look_at_from_position(sun_pos,Vector3.ZERO,Vector3.UP);
+		light_energy=clamp(0.5+day_time.y/2,0.5,1.0)
+		light_color=lerp(sunset_light,sun_light,light_energy*2.0 -1.0)
+	if (day_time.x == 5.0 or day_time.x == 6.0 or day_time.x == 7.0 or day_time.x == 8.0):
+		temp = 3.0 #день
+		$Sun_Moon.look_at_from_position(sun_pos,Vector3.ZERO,Vector3.UP);
+		light_energy =1.0
+	if (day_time.x == 9.0):
+		temp = 4.0 #от дня к закату
+		$Sun_Moon.look_at_from_position(sun_pos,Vector3.ZERO,Vector3.UP);
+		light_energy=clamp(1.0-day_time.y/2,0.5,1.0)
+		light_color=lerp(sunset_light,sun_light,light_energy*2.0 -1.0)
+	if (day_time.x == 10.0):
+		temp = 5.0 #от заката к ночи
+		$Sun_Moon.look_at_from_position(sun_pos,Vector3.ZERO,Vector3.UP);
+		light_energy=clamp(0.5-day_time.y/2,0.05,0.5)
+		light_color=lerp(moon_light, sunset_light,light_energy*2.0)
+	day_time.x = temp;
+	#print (day_time)
+	$sky_viewport/sky_texture.material.set(\"shader_param/DAY_TIME\",day_time)
+	light_energy = light_energy *(1-coverage*0.5)
+	$Sun_Moon.light_energy = light_energy
+	$Sun_Moon.light_color = light_color
+	$Env.environment.ambient_light_energy = light_energy
+	$Env.environment.ambient_light_color = light_color
+	$Env.environment.adjustment_saturation = 1-coverage*0.5
+
+func _moon(value):
+	$sky_viewport/sky_texture.material.set(\"shader_param/MOON_PHASE\",value)
+
+func _set_exposure(value):
+	god_rays.set_exposure(value)
+
+func _set_attenuation(value):
+	god_rays.set_attenuation(value)
+	
+func _set_light_size(value):
+	god_rays.set_light_size(value)
+
+
+func _godrays_toggled(button_pressed):
+	if button_pressed:
+		add_child(god_rays)
+		god_rays.light = get_node(\"Sun_Moon\")
+		god_rays.set_clouds(get_node(\"cloud_viewport\").get_texture())
+	else:
+		remove_child(god_rays)
+	print (god_rays)
+	print(button_pressed)"
+
+[sub_resource type="ShaderMaterial" id=2]
+shader = ExtResource( 2 )
+shader_param/iTime = 0.0
+shader_param/WIND = Vector3( 0, 0, 0.1 )
+shader_param/MOON_POS = Vector3( 0, 0, 0 )
+shader_param/COVERAGE = 0.431
+shader_param/HEIGHT = 0.465
+shader_param/THICKNESS = 21.552
+shader_param/ABSORPTION = 1.345
+shader_param/STEPS = 25
+shader_param/sun_color = Color( 1, 0.705882, 0.54902, 1 )
+shader_param/clouds_color = Color( 1, 1, 1, 1 )
+shader_param/moon_radius = 0.07
+shader_param/Noise = ExtResource( 4 )
+
+[sub_resource type="ImageTexture" id=3]
+flags = 14
+lossy_quality = 1.0
+flags = 14
+size = Vector2( 1024, 1024 )
+
+[sub_resource type="ViewportTexture" id=4]
+flags = 4
+viewport_path = NodePath("cloud_viewport")
+
+[sub_resource type="ShaderMaterial" id=5]
+resource_local_to_scene = true
+shader = ExtResource( 1 )
+shader_param/iTime = 0.0
+shader_param/DAY_TIME = Vector2( 0, 0 )
+shader_param/SUN_POS = Vector3( 0, 1, 0 )
+shader_param/MOON_POS = Vector3( 0, 0, 0 )
+shader_param/MOON_PHASE = -0.2
+shader_param/LIGHTING_STRENGTH = Vector3( 0, 0, 0 )
+shader_param/LIGHTTING_POS = Vector3( 0, 1, 0 )
+shader_param/night_color_sky = Color( 0, 0, 0, 1 )
+shader_param/sunset_color_sky = Color( 0.215686, 0.498039, 0.682353, 1 )
+shader_param/sunset_color_horizon = Color( 0.862745, 0.258824, 0.0705882, 1 )
+shader_param/day_color_sky = Color( 0.0705882, 0.180392, 0.501961, 1 )
+shader_param/day_color_horizon = Color( 0.243137, 0.533333, 0.729412, 1 )
+shader_param/sun_color = Color( 0.917647, 0.541176, 0.341176, 1 )
+shader_param/moon_color = Color( 0.929412, 0.937255, 0.811765, 1 )
+shader_param/moon_radius = 0.07
+shader_param/Noise = ExtResource( 4 )
+shader_param/cloud_env_texture = SubResource( 4 )
+
+[node name="Sky" type="Spatial"]
+script = SubResource( 1 )
+
+[node name="Env" type="WorldEnvironment" parent="."]
+environment = ExtResource( 6 )
+
+[node name="cloud_viewport" type="Viewport" parent="."]
+size = Vector2( 1024, 1024 )
+transparent_bg = true
+render_target_update_mode = 3
+
+[node name="cloud_texture" type="Sprite" parent="cloud_viewport"]
+material = SubResource( 2 )
+texture = SubResource( 3 )
+centered = false
+
+[node name="sky_viewport" type="Viewport" parent="."]
+size = Vector2( 1024, 1024 )
+render_target_update_mode = 3
+
+[node name="sky_texture" type="Sprite" parent="sky_viewport"]
+material = SubResource( 5 )
+texture = SubResource( 3 )
+centered = false
+
+[node name="Sun_Moon" type="DirectionalLight" parent="."]
+transform = Transform( 1, 0, 0, 0, -1.62921e-07, -1, 0, 1, -1.62921e-07, 0, -1, 0 )
+shadow_enabled = true
+shadow_color = Color( 0.3, 0.3, 0.3, 1 )
+directional_shadow_depth_range = 1
+
+[node name="Control" type="Control" parent="."]
+anchor_right = 0.5
+anchor_bottom = 1.0
+margin_left = 6.0
+margin_top = 2.0
+margin_right = 3.0
+margin_bottom = -95.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="Control"]
+margin_left = 14.5021
+margin_top = 363.368
+margin_right = 257.503
+margin_bottom = 377.368
+text = "Control: Press G and move sliders."
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label2" type="Label" parent="Control"]
+margin_left = 15.5002
+margin_top = 448.335
+margin_right = 64.5002
+margin_bottom = 462.335
+custom_colors/font_color = Color( 1, 1, 1, 1 )
+text = "HEIGHT"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="HScrollBar" type="HScrollBar" parent="Control/Label2"]
+margin_left = 5.0
+margin_top = 16.0
+margin_right = 142.0
+margin_bottom = 28.0
+max_value = 1.0
+value = 0.35
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label3" type="Label" parent="Control"]
+margin_left = 14.2347
+margin_top = 415.311
+margin_right = 82.2347
+margin_bottom = 429.311
+text = "COVERAGE"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="HScrollBar" type="HScrollBar" parent="Control/Label3"]
+margin_left = 5.0
+margin_top = 17.2915
+margin_right = 145.0
+margin_bottom = 30.2915
+max_value = 1.0
+value = 0.5
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label6" type="Label" parent="Control"]
+margin_left = 14.3768
+margin_top = 481.196
+margin_right = 275.377
+margin_bottom = 495.196
+text = "Quality STEPS (1-100) clouds and godrays"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="HScrollBar" type="HScrollBar" parent="Control/Label6"]
+margin_left = 5.0
+margin_top = 16.2108
+margin_right = 145.0
+margin_bottom = 28.2108
+step = 1.0
+value = 25.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label7" type="Label" parent="Control"]
+margin_left = 13.9099
+margin_top = 582.77
+margin_right = 81.91
+margin_bottom = 596.77
+text = "DAY_TIME"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="HScrollBar" type="HScrollBar" parent="Control/Label7"]
+margin_left = 5.0
+margin_top = 17.0
+margin_right = 1242.0
+margin_bottom = 29.0
+max_value = 1.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label8" type="Label" parent="Control"]
+margin_left = 14.9356
+margin_top = 513.504
+margin_right = 103.936
+margin_bottom = 527.504
+text = "wind_strength"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="HScrollBar" type="HScrollBar" parent="Control/Label8"]
+margin_left = 5.0
+margin_top = 17.2915
+margin_right = 145.0
+margin_bottom = 30.2915
+max_value = 1.0
+value = 0.1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Button" type="Button" parent="Control"]
+margin_left = 22.8748
+margin_top = 550.462
+margin_right = 155.875
+margin_bottom = 570.462
+text = "lighting strike"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label4" type="Label" parent="Control"]
+margin_left = 22.1606
+margin_top = 384.487
+margin_right = 100.161
+margin_bottom = 398.487
+text = "Moon Phase"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="HScrollBar" type="HScrollBar" parent="Control/Label4"]
+margin_left = -1.95068
+margin_top = 17.8521
+margin_right = 135.049
+margin_bottom = 29.8521
+min_value = -0.2
+max_value = 0.2
+value = -0.2
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label5" type="Label" parent="Control"]
+margin_left = 16.6735
+margin_top = 55.7636
+margin_right = 75.6735
+margin_bottom = 69.7636
+text = "exposure"
+
+[node name="HScrollBar" type="HScrollBar" parent="Control/Label5"]
+margin_left = 0.40126
+margin_top = 16.5924
+margin_right = 134.401
+margin_bottom = 28.5924
+max_value = 1.0
+
+[node name="Label9" type="Label" parent="Control"]
+margin_left = 17.2649
+margin_top = 90.7701
+margin_right = 90.2649
+margin_bottom = 104.77
+text = "attenuation"
+
+[node name="HScrollBar" type="HScrollBar" parent="Control/Label9"]
+margin_left = 0.40126
+margin_top = 16.5924
+margin_right = 134.401
+margin_bottom = 28.5924
+max_value = 10.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label10" type="Label" parent="Control"]
+margin_left = 18.1364
+margin_top = 126.132
+margin_right = 78.1364
+margin_bottom = 140.132
+text = "light_size"
+
+[node name="HScrollBar" type="HScrollBar" parent="Control/Label10"]
+margin_left = 0.40126
+margin_top = 16.5924
+margin_right = 134.401
+margin_bottom = 28.5924
+max_value = 1.0
+
+[node name="Label11" type="Label" parent="Control"]
+margin_left = 12.4966
+margin_top = 20.5826
+margin_right = 80.4966
+margin_bottom = 34.5826
+text = "GOD_RAYS"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="CheckBox" type="CheckBox" parent="Control/Label11"]
+margin_left = 2.20528
+margin_top = 13.9668
+margin_right = 26.2053
+margin_bottom = 37.9668
+__meta__ = {
+"_edit_use_anchors_": false
+}
+[connection signal="value_changed" from="Control/Label2/HScrollBar" to="." method="_height_chg"]
+[connection signal="value_changed" from="Control/Label3/HScrollBar" to="." method="_cov_scb"]
+[connection signal="value_changed" from="Control/Label6/HScrollBar" to="." method="_quality_scb"]
+[connection signal="value_changed" from="Control/Label7/HScrollBar" to="." method="_DAY_TIME_changed"]
+[connection signal="value_changed" from="Control/Label8/HScrollBar" to="." method="_wind"]
+[connection signal="button_down" from="Control/Button" to="." method="_lighting_on"]
+[connection signal="button_up" from="Control/Button" to="." method="_lighting_off"]
+[connection signal="value_changed" from="Control/Label4/HScrollBar" to="." method="_moon"]
+[connection signal="value_changed" from="Control/Label5/HScrollBar" to="." method="_set_exposure"]
+[connection signal="value_changed" from="Control/Label9/HScrollBar" to="." method="_set_attenuation"]
+[connection signal="value_changed" from="Control/Label10/HScrollBar" to="." method="_set_light_size"]
+[connection signal="toggled" from="Control/Label11/CheckBox" to="." method="_godrays_toggled"]
