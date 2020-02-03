@@ -26,11 +26,9 @@ var coverage: float = 0.5
 var god_rays = load(\"res://GodRays.tscn\")
 
 func _ready():
+	god_rays =god_rays.instance()
 	if not show_controls:
 		$Control.queue_free()
-	god_rays =god_rays.instance()
-	god_rays.light = get_node(\"Sun_Moon\")
-	god_rays.set_clouds(get_node(\"cloud_viewport\").get_texture())
 	$Env.environment.background_sky.set_panorama($sky_viewport.get_texture())
 	_DAY_TIME_changed(time_off_day)
 
@@ -136,7 +134,6 @@ func _set_attenuation(value):
 func _set_light_size(value):
 	god_rays.set_light_size(value)
 
-
 func _godrays_toggled(button_pressed):
 	if button_pressed:
 		add_child(god_rays)
@@ -144,8 +141,7 @@ func _godrays_toggled(button_pressed):
 		god_rays.set_clouds(get_node(\"cloud_viewport\").get_texture())
 	else:
 		remove_child(god_rays)
-	print (god_rays)
-	print(button_pressed)"
+"
 
 [sub_resource type="ShaderMaterial" id=2]
 shader = ExtResource( 2 )
