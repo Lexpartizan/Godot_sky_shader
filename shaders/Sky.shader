@@ -88,13 +88,10 @@ void fragment(){
     uv.x = 2.0 * uv.x - 1.0;
     uv.y = 2.0 * uv.y - 1.0;
 	lowp vec3 rd = normalize(rotate_y(rotate_x(vec3(0.0, 0.0, 1.0),-uv.y*3.1415926535/2.0),-uv.x*3.1415926535));
-	//lowp vec3 ro = vec3(0.0, -200.0*HEIGHT+40.0, 0.0); //тут можно регулировать высоту облаков.
-	lowp vec4 sun_amount = sun_color * min(pow(max(dot(rd, SUN_POS), 0.0), 1500.0) * 5.0, 1.0);// + sun_color * min(pow(max(dot(rd, SUN_POS), 0.0), 10.0) * .6, 1.0);
-	
+	lowp vec4 sun_amount = sun_color * min(pow(max(dot(rd, SUN_POS), 0.0), 1500.0) * 5.0, 1.0) + sun_color * min(pow(max(dot(rd, SUN_POS), 0.0), 10.0) * .3, 1.0);
 	lowp float skyPow = dot(rd, vec3(0.0, -1.0, 0.0));
     lowp float horizonPow =1.-pow(1.0-abs(skyPow), 5.0);
-    
-	lowp vec4 cld = texture(cloud_env_texture, SCREEN_UV);
+    lowp vec4 cld = texture(cloud_env_texture, SCREEN_UV);
 	lowp vec4 sky;
 	
 	if (DAY_TIME.x==0.0) 
