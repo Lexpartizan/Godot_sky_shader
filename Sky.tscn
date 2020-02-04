@@ -1,8 +1,7 @@
-[gd_scene load_steps=11 format=2]
+[gd_scene load_steps=10 format=2]
 
 [ext_resource path="res://shaders/Sky.shader" type="Shader" id=1]
 [ext_resource path="res://shaders/Clouds.shader" type="Shader" id=2]
-[ext_resource path="res://GodRays.tscn" type="PackedScene" id=3]
 [ext_resource path="res://shaders/noise.png" type="Texture" id=4]
 [ext_resource path="res://default_env.tres" type="Environment" id=6]
 
@@ -24,13 +23,16 @@ var wind_dir: Vector2=Vector2(1.0,0.0)
 var lighting_strike: bool = false
 var time_off_day: float = 0.0 #from 0 to 1
 var coverage: float = 0.5
-export (PackedScene) var god_rays
+var god_rays
 
 func _ready():
 	if not show_controls:
 		$Control.queue_free()
-	if god_rays:
-		god_rays =god_rays.instance()
+	god_rays = get_node(\"GodRays\")
+	_godrays_toggled(false)
+	_set_attenuation(3.0)
+	_set_exposure(1.0)
+	_set_light_size(0.3)
 	$Env.environment.background_sky.set_panorama($sky_viewport.get_texture())
 	_DAY_TIME_changed(time_off_day)
 
@@ -78,8 +80,8 @@ func _DAY_TIME_changed(value):
 	day_time.y = clamp(fmod(time_off_day,0.0835)*12.0,0.01,0.99); #Время в периоде в диапазоне от 0 до 1.
 	var phi: float =0.0;
 	phi = ((day_time.x-1.0) *30.0+day_time.y *30.0)*0.0174533
-	sun_pos = Vector3(0.0,-1000.0,0.0).normalized().rotated(Vector3(1.0,0.0,0.0).normalized(),phi) #тут можно изменять положение Солнца и вокруг какой оси его крутить.
-	moon_pos = Vector3(0.0,1000.0,0.0).normalized().rotated(Vector3(1.0,0.0,0.0).normalized(),phi)
+	sun_pos = Vector3(0.0,-1.0,0.0).normalized().rotated(Vector3(1.0,0.0,0.0).normalized(),phi) #тут можно изменять положение Солнца и вокруг какой оси его крутить.
+	moon_pos = Vector3(0.0,1.0,0.0).normalized().rotated(Vector3(1.0,0.0,0.0).normalized(),phi)
 	$sky_viewport/sky_texture.material.set(\"shader_param/SUN_POS\",sun_pos)
 	$sky_viewport/sky_texture.material.set(\"shader_param/MOON_POS\",moon_pos)
 	$cloud_viewport/cloud_texture.material.set(\"shader_param/MOON_POS\",moon_pos)
@@ -127,13 +129,19 @@ func _moon(value):
 	$sky_viewport/sky_texture.material.set(\"shader_param/MOON_PHASE\",value)
 
 func _set_exposure(value):
-	god_rays.set_exposure(value)
+	if god_rays:
+		god_rays.set_exposure(value)
+		print (\"exp: \",value)
 
 func _set_attenuation(value):
-	god_rays.set_attenuation(value)
+	if god_rays:
+		god_rays.set_attenuation(value)
+		print (\"att: \",value)
 	
 func _set_light_size(value):
-	god_rays.set_light_size(value)
+	if god_rays:
+		god_rays.set_light_size(value)
+		print (\"light_sze: \",value)
 
 func _godrays_toggled(button_pressed):
 	if not god_rays:
@@ -144,9 +152,6 @@ func _godrays_toggled(button_pressed):
 		god_rays.set_clouds(get_node(\"cloud_viewport\").get_texture())
 	else:
 		remove_child(god_rays)
-
-func _exit_tree():
-	god_rays.free()
 "
 
 [sub_resource type="ShaderMaterial" id=2]
@@ -165,9 +170,9 @@ shader_param/moon_radius = 0.07
 shader_param/Noise = ExtResource( 4 )
 
 [sub_resource type="ImageTexture" id=3]
-flags = 14
+flags = 0
 lossy_quality = 1.0
-flags = 14
+flags = 0
 size = Vector2( 1024, 1024 )
 
 [sub_resource type="ViewportTexture" id=4]
@@ -197,7 +202,6 @@ shader_param/cloud_env_texture = SubResource( 4 )
 
 [node name="Sky" type="Spatial"]
 script = SubResource( 1 )
-god_rays = ExtResource( 3 )
 
 [node name="Env" type="WorldEnvironment" parent="."]
 environment = ExtResource( 6 )
