@@ -1,5 +1,4 @@
 shader_type canvas_item;
-
 // USING https://www.shadertoy.com/view/XtBXDw for 3dclouds and https://www.shadertoy.com/view/4dsXWn for 2d clouds
 uniform float iTime;
 uniform sampler2D Noise;
@@ -38,7 +37,6 @@ lowp vec3 rotate_x(vec3 v, float angle)
 		vec3(+.0, +ca, -sa),
 		vec3(+.0, +sa, +ca));
 }
-
 lowp float rand(vec2 co) {return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);}//просто пример рандома в шейдерах из инета
 
 lowp float noise( in vec3 pos )
@@ -63,10 +61,15 @@ lowp float get_noise(vec3 p, float FBM_FREQ)
 lowp vec4 draw_night_sky (float attenuation, vec4 sun_amount, vec3 rd, float cld_alpha)
 {
 	lowp float dist =length(MOON_POS-rd);
+	lowp vec3 moon_uv = MOON_POS-rd;
+	moon_uv/=moon_radius;
+	moon_uv= (moon_uv*0.5+0.5); 
 	lowp vec4 night_sky = vec4(0.0);
+		
 	if (dist<moon_radius) //Рисуем Луну
 	{
-		float moon_amount = min(mix(smoothstep(0.35,0.999,get_noise(MOON_POS - rd, 2.76434)),0.0,smoothstep(moon_radius*0.9, moon_radius, dist)),attenuation);
+		float moon_amount = mix(smoothstep(0.2,1.0,get_noise(MOON_POS - rd+0.0, 3.6)),0.0,smoothstep(moon_radius*0.8, moon_radius, dist))*attenuation;
+		//float moon_amount = mix(textureLod(Moon,moon_uv.xz,0.0).r,0.0,smoothstep(moon_radius*0.7, moon_radius, dist))*attenuation;
 		moon_amount = clamp(mix (0.0,moon_amount,smoothstep(0.9,1.0,0.75+length(MOON_POS-rd+MOON_PHASE))),0.003,0.99);
 		night_sky = moon_color*moon_amount*(clamp(1.0-cld_alpha-0.2,0.0,1.0));
 	}
@@ -96,7 +99,7 @@ void fragment(){
 	
 	if (DAY_TIME.x==0.0) 
 		{	sky.rgb = mix (sky.rgb, vec3(0.0), 0.99); //затемняем
-			sky += draw_night_sky(0.99,sun_amount,rd,cld.a);
+			sky += draw_night_sky(1.0,sun_amount,rd,cld.a);
 			cld.rgb = mix (cld.rgb, vec3(0.0), 0.99); //затемняем облака
 		}
 	if (DAY_TIME.x==1.0) 
@@ -123,5 +126,5 @@ void fragment(){
 	}
 	sky.rgb = clamp(sky.rgb,0.0,1.0);
 	sky.rgb = mix(sky.rgb, cld.rgb/(0.0001+cld.a), cld.a);
-	COLOR = vec4(sky.rgb,1.0);
+	COLOR=vec4(sky.rgb,1.0);
 }
