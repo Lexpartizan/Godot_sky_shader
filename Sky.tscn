@@ -67,8 +67,6 @@ func _cov_scb(value):
 
 func _quality_scb(value):
 	$cloud_viewport/cloud_texture.material.set(\"shader_param/STEPS\",clamp (value,2,100))
-	#god_rays.set_steps(clamp(value,30,100))
-	god_rays.set_steps(100)
 	
 func _wind(value):
 	$cloud_viewport/cloud_texture.material.set(\"shader_param/WIND\",Vector3(wind_dir.x,0.0,wind_dir.y).normalized()*value)
@@ -146,6 +144,9 @@ func _godrays_toggled(button_pressed):
 		god_rays.set_clouds(get_node(\"cloud_viewport\").get_texture())
 	else:
 		remove_child(god_rays)
+
+func _exit_tree():
+	god_rays.free()
 "
 
 [sub_resource type="ShaderMaterial" id=2]
