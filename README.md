@@ -7,17 +7,21 @@ Complete feature list
 * Moon
 * Stars
 * Clouds
-* `work in progress` God Rays (via [God Rays Plugin](https://github.com/SIsilicon/Godot-God-Rays-Plugin) by @SIsilicon)
+* God Rays (via [God Rays Plugin](https://github.com/SIsilicon/Godot-God-Rays-Plugin) by @SIsilicon)
   * the combination of both has a noticable performance impact
+     *this videotutor explain how_to setup godrays plugin for this sky scene in editor. (https://www.youtube.com/watch?v=kAn39VPiNjY)
+     I highly recommend downloading the addon folder from https://github.com/SIsilicon/Godot-God-Rays-Plugin
+     but just in case i put version 1.01 in addons.zip
 
-[![sky](https://github.com/Lexpartizan/Godot_sky_shader/blob/master/preview1.jpg)](https://www.youtube.com/watch?v=fzUHa1BbOd4) 
+
+[![sky](https://github.com/Lexpartizan/Godot_sky_shader/blob/master/images/preview.jpg)](https://www.youtube.com/watch?v=fzUHa1BbOd4) 
 
 The Third Person Controller used in the demo scene uses the code from https://github.com/NIK0666/GodotThirdPersonController, as featured in the following video: https://youtu.be/jxtUtUo4aEI
 
 # Support
 
 The shader and demo scenes target Godot 3.2.  
-There is a *.zip file which contains a subset of this project's content and works in Godot 3.1.
+There is a *.zip file which contains a subset of this project's content and works in Godot 3.1. It will be ready later.
 
 # Demo
 
@@ -34,13 +38,22 @@ Parameters in the Sky scene:
 * Lightning Strike: brightens the sky for less than a second
 
 Additional changes can be made which are not currently exposed in the GUI of the demo scene, such as
-* traversal route (speed & direction) of sun and moon
+* traversal route (axis of rotation and start position) of sun and Moon
+[![sky](https://github.com/Lexpartizan/Godot_sky_shader/blob/master/images/sun_moon.jpg)]
+First Vector3(0.0,-1.0,0.0), in the highlighted lines of code, this is start position. You can change this to distance the Sun from the zenith.
+Second Vector3(1.0,0.0,0.0) this is axis of rotation.
+
+Same information for Moon.
 * wind direction, ie. direction the clouds move
+set variable wind_dir (Vector2) from your code and call function _wind(value), where value is wind power.
 
 # How-to use it in your project
 
 Downloading for Godot 3.2
 1. Download the project using a) Git via command line or b) via the projects Code webpage on Github using the "Clone or download" button and then "Download ZIP"
+2. Copy folder "shaders" and files "Sky.tsn" and "default_env.tres" to your project.
+3. Add Sky.tscn on tree.
+4. Add addon GodRays if you need (see video).
 
 Downloading for Godot 3.1
 1. Download the zip called "Godot_sky_shader-3.1.2.zip" by clicking on it on the projects Code webpage
@@ -64,10 +77,8 @@ Using as it is
 required File structure in your project (so that the file Sky.tscn can find its dependencies):  
 ```
 /shaders (folder with shaders)
-  /CloudlessSky.shader
   /Clouds.shader
   /Sky.shader
-  /fire.shader
   /noise.png
   /noise.png.import
 Sky.tscn
@@ -103,6 +114,6 @@ Example on how to set up the shaders in your project if you don't want to use th
 
 # Known Issues
 
-* Stretched sun and moon (see issue #5)
-* Flickering on the cloud edges
+* Stretched sun and moon (see issue #5) (becouse this panorama, but for the moon, you could come up with a solution by projecting it onto the camera screen. But I can't do it :-( )
+* Flickering on the cloud edges (these are noise features that can be significantly reduced by increasing the number of quality_steps, but this affects performance.)
 * A vertical seam on the sphere of the PanoramaSky is visible when the clouds move over it (see issue #2)
