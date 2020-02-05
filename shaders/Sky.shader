@@ -97,27 +97,33 @@ void fragment(){
     lowp vec4 cld = texture(cloud_env_texture, SCREEN_UV);
 	lowp vec4 sky;
 	
-	if (DAY_TIME.x==0.0) 
+	switch(int(DAY_TIME.x))
+	{
+	case 0:
 		{	sky.rgb = mix (sky.rgb, vec3(0.0), 0.99); //затемняем
 			sky += draw_night_sky(1.0,sun_amount,rd,cld.a);
 			cld.rgb = mix (cld.rgb, vec3(0.0), 0.99); //затемняем облака
+			break;
 		}
-	if (DAY_TIME.x==1.0) 
+	case 1:
 		{	lowp float moon_dist = length(MOON_POS-rd);
 			sky = mix(mix(night_color_sky, sunset_color_horizon, DAY_TIME.y), mix(night_color_sky, sunset_color_sky, DAY_TIME.y),rd.y) + sun_amount;
 			sky.rgb = mix (vec3(0.0), sky.rgb, DAY_TIME.y); //постепенно осветляем с рассветом небо
 			sky += draw_night_sky(1.0-DAY_TIME.y,sun_amount,rd,cld.a);
 			cld.rgb = mix (vec3(0.0), cld.rgb, DAY_TIME.y); //постепенно осветляем с рассветом облака
+			break;
 		}
-	if (DAY_TIME.x==2.0) {sky = mix(mix(sunset_color_horizon, day_color_horizon, DAY_TIME.y), mix(sunset_color_sky, day_color_sky, DAY_TIME.y),rd.y) + sun_amount;}
-	if (DAY_TIME.x==3.0) {sky = mix(day_color_horizon, day_color_sky, rd.y) + sun_amount;}
-	if (DAY_TIME.x==4.0) {sky = mix(mix(day_color_horizon, sunset_color_horizon, DAY_TIME.y), mix(day_color_sky, sunset_color_sky, DAY_TIME.y),rd.y) + sun_amount;}
-	if (DAY_TIME.x==5.0) 
+	case 2: {sky = mix(mix(sunset_color_horizon, day_color_horizon, DAY_TIME.y), mix(sunset_color_sky, day_color_sky, DAY_TIME.y),rd.y) + sun_amount;break;}
+	case 3: {sky = mix(day_color_horizon, day_color_sky, rd.y) + sun_amount;break;}
+	case 4: {sky = mix(mix(day_color_horizon, sunset_color_horizon, DAY_TIME.y), mix(day_color_sky, sunset_color_sky, DAY_TIME.y),rd.y) + sun_amount;break;}
+	case 5: 
 		{	sky = mix(mix(sunset_color_horizon, night_color_sky, DAY_TIME.y), mix(sunset_color_sky, night_color_sky, DAY_TIME.y),rd.y) + sun_amount;
 			sky.rgb = mix (sky.rgb, vec3(0.0), DAY_TIME.y); //постепенно затемняем с закатом небо
 			sky += draw_night_sky(DAY_TIME.y,sun_amount,rd,cld.a);//рисуем ночное небо
 			cld.rgb = mix (cld.rgb, vec3(0.0), DAY_TIME.y); //постепенно затемняем с закатом облака
+			break;
 		}
+	}
 	if (LIGHTING_STRENGTH.r >0.1)
 	{
 		lowp vec3 lighting_amount = LIGHTING_STRENGTH * min(pow(max(dot(rd,LIGHTTING_POS), 0.0), 100.0) * 1.0, 1.0);
