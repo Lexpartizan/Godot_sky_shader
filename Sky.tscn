@@ -80,8 +80,8 @@ func _DAY_TIME_changed(value):
 	day_time.y = clamp(fmod(time_off_day,0.0835)*12.0,0.01,0.99); #Время в периоде в диапазоне от 0 до 1.
 	var phi: float =0.0;
 	phi = ((day_time.x-1.0) *30.0+day_time.y *30.0)*0.0174533
-	sun_pos = Vector3(0.0,-1.0,0.0).normalized().rotated(Vector3(1.0,0.0,0.0).normalized(),phi) #тут можно изменять положение Солнца и вокруг какой оси его крутить.
-	moon_pos = Vector3(0.0,1.0,0.0).normalized().rotated(Vector3(1.0,0.0,0.0).normalized(),phi)
+	sun_pos = Vector3(0.0,-1.0,0.0).normalized().rotated(Vector3(0.0,0.0,1.0).normalized(),phi) #тут можно изменять положение Солнца и вокруг какой оси его крутить.
+	moon_pos = Vector3(0.0,1.0,0.0).normalized().rotated(Vector3(0.0,0.0,1.0).normalized(),phi)
 	$sky_viewport/sky_texture.material.set(\"shader_param/SUN_POS\",sun_pos)
 	$sky_viewport/sky_texture.material.set(\"shader_param/MOON_POS\",moon_pos)
 	$cloud_viewport/cloud_texture.material.set(\"shader_param/MOON_POS\",moon_pos)
