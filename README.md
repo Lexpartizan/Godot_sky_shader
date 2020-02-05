@@ -21,8 +21,7 @@ The Third Person Controller used in the demo scene uses the code from https://gi
 # Support
 
 The shader and demo scenes target Godot 3.2.  
-There is a *.zip file which contains a subset of this project's content and works in Godot 3.1. It will be ready later.
-
+There is a "version_for_Godot_3_1_2.zip" file which contains a subset of this project's content and works in Godot 3.1. Godrays dont support for Godot 3.1.2.
 # Demo
 
 The demo scene Sky.tscn showcases some of the abilities of this dynamic sky.
