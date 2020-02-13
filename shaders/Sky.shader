@@ -70,7 +70,7 @@ lowp vec4 draw_night_sky (float attenuation, vec4 sun_amount, vec3 rd, float cld
 	{
 		float moon_amount = mix(smoothstep(0.2,1.0,get_noise(MOON_POS - rd, 3.6)),0.0,smoothstep(moon_radius*0.8, moon_radius, dist))*attenuation; //Draw Moon, do antialiasing and attenuation of the brightness of the moon (for sunrise and sunset).
 		moon_amount = clamp(mix (0.0,moon_amount,smoothstep(0.9,1.0,0.75+length(MOON_POS-rd+MOON_PHASE))),0.003,0.99);//here we cast a shadow on the moon. moon phase. 
-		night_sky = moon_color*moon_amount*(clamp(1.0-cld_alpha-0.2,0.0,1.0));
+		night_sky = moon_color*moon_amount*(clamp(1.0-cld_alpha-0.2,0.0,1.0));//Here we mix with the clouds so that there is no black border. But so that the Moon does not Shine through the clouds.
 	}
 	else 
 	{
