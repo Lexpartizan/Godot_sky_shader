@@ -155,11 +155,11 @@ lowp vec4 clouds_2d(vec3 rd,vec3 wind)
 }
 
 void fragment(){
-	lowp vec2 uv = UV; //Переводим в панорамные координаты. Понятия не имею, как это, этот кусок спижжен у оригинального автора, получаем вектора ro  и rd. rd - трёхмерное положение в пространстве. ro -ХЗ, оффсет, видимо
+	lowp vec2 uv = UV; 
 	uv.x = 2.0 * uv.x - 1.0;
 	uv.y = 2.0 * uv.y - 1.0;
-	lowp vec3 rd = normalize(rotate_y(rotate_x(vec3(0.0, 0.0, 1.0),-uv.y*3.1415926535/2.0),-uv.x*3.1415926535));
-	lowp vec3 ro = vec3(0.0, -200.0*HEIGHT+40.0, 0.0); //тут можно регулировать высоту облаков.
+	lowp vec3 rd = normalize(rotate_y(rotate_x(vec3(0.0, 0.0, 1.0),-uv.y*3.1415926535/2.0),-uv.x*3.1415926535)); //transform UV to spherical panorama 3d coords
+	lowp vec3 ro = vec3(0.0, -200.0*HEIGHT+40.0, 0.0); //This is the vector of displacement of the sphere relative to zero coordinates. Here you can set the height of the clouds. That is, to make a sphere with clouds higher or lower.
 	lowp vec4 cld = vec4(0.0);
 	lowp float skyPow = dot(rd, vec3(0.0, -1.0, 0.0));
 	lowp float horizonPow =1.-pow(1.0-abs(skyPow), 5.0);
@@ -168,7 +168,7 @@ void fragment(){
 		if (STEPS < 20) cld = clouds_2d(rd,WIND*iTime); else cld=clouds_3d(ro,rd,WIND*iTime);
 		cld=clamp(cld,0.0,1.0);
 		cld.rgb+=0.04*cld.rgb*horizonPow;
-		cld*=clamp((  1.0 - exp(-2.3 * pow(max((0.0), horizonPow), (2.6)))),0.,1.);//растворяем облака в горизонте
+		cld*=clamp((  1.0 - exp(-2.3 * pow(max((0.0), horizonPow), (2.6)))),0.,1.);//Here we dissolve the clouds in the horizon for a smooth transition to the horizon line.
 	}
 	else
 	{
