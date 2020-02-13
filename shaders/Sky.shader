@@ -37,7 +37,7 @@ lowp vec3 rotate_x(vec3 v, float angle)
 		vec3(+.0, +ca, -sa),
 		vec3(+.0, +sa, +ca));
 }
-lowp float rand(vec2 co) {return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);}//просто пример рандома в шейдерах из инета
+lowp float rand(vec2 co) {return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);}//just random function. Used for stars.
 
 lowp float noise( in vec3 pos )
 {
@@ -66,17 +66,16 @@ lowp vec4 draw_night_sky (float attenuation, vec4 sun_amount, vec3 rd, float cld
 	moon_uv= (moon_uv*0.5+0.5); 
 	lowp vec4 night_sky = vec4(0.0);
 		
-	if (dist<moon_radius) //Рисуем Луну
+	if (dist<moon_radius) //Draw Moon
 	{
-		float moon_amount = mix(smoothstep(0.2,1.0,get_noise(MOON_POS - rd+0.0, 3.6)),0.0,smoothstep(moon_radius*0.8, moon_radius, dist))*attenuation;
-		//float moon_amount = mix(textureLod(Moon,moon_uv.xz,0.0).r,0.0,smoothstep(moon_radius*0.7, moon_radius, dist))*attenuation;
-		moon_amount = clamp(mix (0.0,moon_amount,smoothstep(0.9,1.0,0.75+length(MOON_POS-rd+MOON_PHASE))),0.003,0.99);
+		float moon_amount = mix(smoothstep(0.2,1.0,get_noise(MOON_POS - rd, 3.6)),0.0,smoothstep(moon_radius*0.8, moon_radius, dist))*attenuation; //Draw Moon, do antialiasing and attenuation of the brightness of the moon (for sunrise and sunset).
+		moon_amount = clamp(mix (0.0,moon_amount,smoothstep(0.9,1.0,0.75+length(MOON_POS-rd+MOON_PHASE))),0.003,0.99);//here we cast a shadow on the moon. moon phase. 
 		night_sky = moon_color*moon_amount*(clamp(1.0-cld_alpha-0.2,0.0,1.0));
 	}
 	else 
 	{
-	if (sun_amount.r<0.01 && cld_alpha == 0.0)//Если свет от Солнца не затмевает звёзды на рассвете/закате или не закрывают облака
-		if (rand(rd.zx) - rd.y*0.0033> 0.996) //Рисуем звёзды, при этом вверху рисуем их меньше, так как при такой проекции текстуры так получается равномернее
+	if (sun_amount.r<0.01 && cld_alpha == 0.0)//If the light from the Sun does not obscure the stars at sunrise/sunset and does not cover the clouds
+		if (rand(rd.zx) - rd.y*0.0033> 0.996) //the higher the stars, the fewer they are. Since the spherical panorama does not allow uniform coverage, the pixel density at height is higher.
 		{
 		lowp float stars = rand(rd.zy)*0.5;
 		stars = clamp(sin(iTime*3.0+stars*10.0),0.1,stars);
@@ -90,7 +89,7 @@ void fragment(){
 	lowp vec2 uv = UV; //Переводим в панорамные координаты. Понятия не имею, как это, этот кусок спижжен у оригинального автора, получаем вектора ro  и rd. rd - трёхмерное положение в пространстве. ro -ХЗ, оффсет, видимо
     uv.x = 2.0 * uv.x - 1.0;
     uv.y = 2.0 * uv.y - 1.0;
-	lowp vec3 rd = normalize(rotate_y(rotate_x(vec3(0.0, 0.0, 1.0),-uv.y*3.1415926535/2.0),-uv.x*3.1415926535));
+	lowp vec3 rd = normalize(rotate_y(rotate_x(vec3(0.0, 0.0, 1.0),-uv.y*3.1415926535/2.0),-uv.x*3.1415926535)); //transform UV to spherical panorama 3d coords
 	lowp vec4 sun_amount = sun_color * min(pow(max(dot(rd, SUN_POS), 0.0), 1500.0) * 5.0, 1.0) + sun_color * min(pow(max(dot(rd, SUN_POS), 0.0), 10.0) * .3, 1.0);
 	lowp float skyPow = dot(rd, vec3(0.0, -1.0, 0.0));
     lowp float horizonPow =1.-pow(1.0-abs(skyPow), 5.0);
@@ -102,15 +101,15 @@ void fragment(){
 	case 0:
 		{	sky = night_color_sky;
 			sky += draw_night_sky(1.0,sun_amount,rd,cld.a);
-			cld.rgb = mix (cld.rgb, vec3(0.0), 0.99); //затемняем облака
+			cld.rgb = mix (cld.rgb, vec3(0.0), 0.99); //darken the clouds, becouse night
 			break;
 		}
 	case 1:
 		{	lowp float moon_dist = length(MOON_POS-rd);
 			sky = mix(mix(night_color_sky, sunset_color_horizon, DAY_TIME.y), mix(night_color_sky, sunset_color_sky, DAY_TIME.y),rd.y) + sun_amount;
-			sky.rgb = mix (vec3(0.0), sky.rgb, DAY_TIME.y); //постепенно осветляем с рассветом небо
+			sky.rgb = mix (vec3(0.0), sky.rgb, DAY_TIME.y); //gradually brighten the sky with sunrise
 			sky += draw_night_sky(1.0-DAY_TIME.y,sun_amount,rd,cld.a);
-			cld.rgb = mix (vec3(0.0), cld.rgb, DAY_TIME.y); //постепенно осветляем с рассветом облака
+			cld.rgb = mix (vec3(0.0), cld.rgb, DAY_TIME.y); //gradually brighten the clouds with sunrise
 			break;
 		}
 	case 2: {sky = mix(mix(sunset_color_horizon, day_color_horizon, DAY_TIME.y), mix(sunset_color_sky, day_color_sky, DAY_TIME.y),rd.y) + sun_amount;break;}
@@ -118,16 +117,16 @@ void fragment(){
 	case 4: {sky = mix(mix(day_color_horizon, sunset_color_horizon, DAY_TIME.y), mix(day_color_sky, sunset_color_sky, DAY_TIME.y),rd.y) + sun_amount;break;}
 	case 5: 
 		{	sky = mix(mix(sunset_color_horizon, night_color_sky, DAY_TIME.y), mix(sunset_color_sky, night_color_sky, DAY_TIME.y),rd.y) + sun_amount;
-			sky.rgb = mix (sky.rgb, vec3(0.0), DAY_TIME.y); //постепенно затемняем с закатом небо
-			sky += draw_night_sky(DAY_TIME.y,sun_amount,rd,cld.a);//рисуем ночное небо
-			cld.rgb = mix (cld.rgb, vec3(0.0), DAY_TIME.y); //постепенно затемняем с закатом облака
+			sky.rgb = mix (sky.rgb, vec3(0.0), DAY_TIME.y); //gradually darken the sky with sunset
+			sky += draw_night_sky(DAY_TIME.y,sun_amount,rd,cld.a);
+			cld.rgb = mix (cld.rgb, vec3(0.0), DAY_TIME.y); //gradually darken the clouds with sunset
 			break;
 		}
 	}
 	if (LIGHTING_STRENGTH.r >0.1)
 	{
-		lowp vec3 lighting_amount = LIGHTING_STRENGTH * min(pow(max(dot(rd,LIGHTTING_POS), 0.0), 100.0) * 1.0, 1.0);
-		sky = vec4(mix (sky.rgb, LIGHTING_STRENGTH,0.8),1.0);
+		sky = vec4(mix (sky.rgb, LIGHTING_STRENGTH,0.8),1.0); //flash of light in the sky simulates a lightning strike
+		lowp vec3 lighting_amount = LIGHTING_STRENGTH * min(pow(max(dot(rd,LIGHTTING_POS), 0.0), 100.0) * 1.0, 1.0); // you don't need to light up the clouds. I just wanted to make the place where the lightning flashed a little bit visible and highlight the clouds there. This is a rather dubious decision.
 		cld.rgb = mix(cld.rgb,lighting_amount, .5);
 	}
 	sky.rgb = clamp(sky.rgb,0.0,1.0);
