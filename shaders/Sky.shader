@@ -86,7 +86,7 @@ lowp vec4 draw_night_sky (float attenuation, vec4 sun_amount, vec3 rd, float cld
 }
 
 void fragment(){
-	lowp vec2 uv = UV; //Переводим в панорамные координаты. Понятия не имею, как это, этот кусок спижжен у оригинального автора, получаем вектора ro  и rd. rd - трёхмерное положение в пространстве. ro -ХЗ, оффсет, видимо
+	lowp vec2 uv = UV; 
     uv.x = 2.0 * uv.x - 1.0;
     uv.y = 2.0 * uv.y - 1.0;
 	lowp vec3 rd = normalize(rotate_y(rotate_x(vec3(0.0, 0.0, 1.0),-uv.y*3.1415926535/2.0),-uv.x*3.1415926535)); //transform UV to spherical panorama 3d coords
