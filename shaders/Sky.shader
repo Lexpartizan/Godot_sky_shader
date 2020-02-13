@@ -100,7 +100,7 @@ void fragment(){
 	switch(int(DAY_TIME.x))
 	{
 	case 0:
-		{	sky.rgb = mix (sky.rgb, vec3(0.0), 0.99); //затемняем
+		{	sky = night_color_sky;
 			sky += draw_night_sky(1.0,sun_amount,rd,cld.a);
 			cld.rgb = mix (cld.rgb, vec3(0.0), 0.99); //затемняем облака
 			break;
