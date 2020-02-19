@@ -58,31 +58,23 @@ lowp float get_noise(vec3 p, float FBM_FREQ)
 	return t;
 }
 
-lowp vec4 draw_night_sky (float attenuation, vec4 sun_amount, vec3 rd, float cld_alpha)
+lowp vec4 draw_night_sky (float attenuation, float sun_amount, vec3 rd, float cld_alpha)
 {
 	lowp float dist =length(MOON_POS-rd);
-	lowp vec3 moon_uv = MOON_POS-rd;
-	moon_uv/=moon_radius;
-	moon_uv= (moon_uv*0.5+0.5); 
 	lowp vec4 night_sky = vec4(0.0);
-		
-	if (dist<moon_radius) //Draw Moon
-	{
-		float moon_amount = mix(smoothstep(0.2,1.0,get_noise(MOON_POS - rd, 3.6)),0.0,smoothstep(moon_radius*0.8, moon_radius, dist))*attenuation; //Draw Moon, do antialiasing and attenuation of the brightness of the moon (for sunrise and sunset).
-		moon_amount = clamp(mix (0.0,moon_amount,smoothstep(0.9,1.0,0.75+length(MOON_POS-rd+MOON_PHASE))),0.003,0.99);//here we cast a shadow on the moon. moon phase. 
-		night_sky = moon_color*moon_amount*(clamp(1.0-cld_alpha-0.2,0.0,1.0));//Here we mix with the clouds so that there is no black border. But so that the Moon does not Shine through the clouds.
-	}
-	else 
-	{
-	if (sun_amount.r<0.01 && cld_alpha == 0.0)//If the light from the Sun does not obscure the stars at sunrise/sunset and does not cover the clouds
+	float moon_amount = min(pow(max(dot(rd, MOON_POS), 0.0), 500.0/moon_radius) * 100.0, 1.0);
+	moon_amount *= get_noise(MOON_POS - rd, 3.1415926536);//some noise, if you want
+	moon_amount*=attenuation; //attenuation of the brightness of the moon (for sunrise and sunset).
+	if (sun_amount<0.01 && cld_alpha == 0.0 && moon_amount < 0.01)//If the light from the Sun does not obscure the stars at sunrise/sunset and does not cover the clouds and moon
 		if (rand(rd.zx) - rd.y*0.0033> 0.996) //the higher the stars, the fewer they are. Since the spherical panorama does not allow uniform coverage, the pixel density at height is higher.
-		{
-		lowp float stars = rand(rd.zy)*0.5;
-		stars = clamp(sin(iTime*3.0+stars*10.0),0.1,stars);
-		night_sky = vec4(vec3(stars),1.0);
-		}
-	}
-	return night_sky;
+			{
+			lowp float stars = rand(rd.zy)*0.5;
+			stars = clamp(sin(iTime*3.0+stars*10.0),0.1,stars);
+			night_sky.rgb = vec3(stars);
+			}
+	moon_amount = clamp(mix (0.0,moon_amount,smoothstep(0.9,1.0,0.75+length(MOON_POS-rd+MOON_PHASE))),0.001,1.0);//here we cast a shadow on the moon. moon phase. 
+	night_sky.rgb += moon_color.rgb*moon_amount*(clamp(1.0-cld_alpha-0.2,0.0,1.0));//Here we mix with the clouds so that there is no black border. But so that the Moon does not Shine through the clouds.
+	return vec4(night_sky.rgb,1.0);
 }
 
 void fragment(){
@@ -100,7 +92,7 @@ void fragment(){
 	{
 	case 0:
 		{	sky = night_color_sky;
-			sky += draw_night_sky(1.0,sun_amount,rd,cld.a);
+			sky += draw_night_sky(1.0,sun_amount.r,rd,cld.a);
 			cld.rgb = mix (cld.rgb, vec3(0.0), 0.99); //darken the clouds, becouse night
 			break;
 		}
@@ -108,7 +100,7 @@ void fragment(){
 		{	lowp float moon_dist = length(MOON_POS-rd);
 			sky = mix(mix(night_color_sky, sunset_color_horizon, DAY_TIME.y), mix(night_color_sky, sunset_color_sky, DAY_TIME.y),rd.y) + sun_amount;
 			sky.rgb = mix (vec3(0.0), sky.rgb, DAY_TIME.y); //gradually brighten the sky with sunrise
-			sky += draw_night_sky(1.0-DAY_TIME.y,sun_amount,rd,cld.a);
+			sky += draw_night_sky(1.0-DAY_TIME.y,sun_amount.r,rd,cld.a);
 			cld.rgb = mix (vec3(0.0), cld.rgb, DAY_TIME.y); //gradually brighten the clouds with sunrise
 			break;
 		}
@@ -118,7 +110,7 @@ void fragment(){
 	case 5: 
 		{	sky = mix(mix(sunset_color_horizon, night_color_sky, DAY_TIME.y), mix(sunset_color_sky, night_color_sky, DAY_TIME.y),rd.y) + sun_amount;
 			sky.rgb = mix (sky.rgb, vec3(0.0), DAY_TIME.y); //gradually darken the sky with sunset
-			sky += draw_night_sky(DAY_TIME.y,sun_amount,rd,cld.a);
+			sky += draw_night_sky(DAY_TIME.y,sun_amount.r,rd,cld.a);
 			cld.rgb = mix (cld.rgb, vec3(0.0), DAY_TIME.y); //gradually darken the clouds with sunset
 			break;
 		}
