@@ -43,11 +43,12 @@ func _process(delta):
 	if (lighting_strike):
 		var lighting_stength = clamp(sin(iTime*31.4),0.1,1.0)
 		lighting_pos = lighting_pos.normalized()
-		$Sun_Moon.look_at_from_position(lighting_pos,Vector3.ZERO,Vector3.UP);
 		$Sun_Moon.light_color = sun_light
 		$Sun_Moon.light_energy = lighting_stength*2
 		$sky_viewport/sky_texture.material.set(\"shader_param/LIGHTTING_POS\",lighting_pos)
 		$sky_viewport/sky_texture.material.set(\"shader_param/LIGHTING_STRENGTH\",Vector3(lighting_stength,lighting_stength,lighting_stength))
+		lighting_pos.x *= -1
+		$Sun_Moon.look_at_from_position(lighting_pos,Vector3.ZERO,Vector3.UP);
 
 func _lighting_on():
 	lighting_strike = true
@@ -76,15 +77,17 @@ func _wind(value):
 func _DAY_TIME_changed(value):
 	time_off_day = value;
 	var day_time: Vector2 = Vector2()
-	day_time.x = floor(time_off_day/0.0835) #Период дня
-	day_time.y = clamp(fmod(time_off_day,0.0835)*12.0,0.01,0.99); #Время в периоде в диапазоне от 0 до 1.
+	day_time.x = floor(time_off_day/0.0835) #the period of day (2 hours)
+	day_time.y = clamp(fmod(time_off_day,0.0835)*12.0,0.01,0.99); #Time in a period of day in the range from 0 to 1.
 	var phi: float =0.0;
-	phi = ((day_time.x-1.0) *30.0+day_time.y *30.0)*0.0174533
-	sun_pos = Vector3(0.0,-1.0,0.0).normalized().rotated(Vector3(0.0,0.0,1.0).normalized(),phi) #тут можно изменять положение Солнца и вокруг какой оси его крутить.
-	moon_pos = Vector3(0.0,1.0,0.0).normalized().rotated(Vector3(0.0,0.0,1.0).normalized(),phi)
+	phi = ((day_time.x-1.0)*30.0+day_time.y *30.0)*0.0174533 #30 degrees in period of day and transform to radians.
+	sun_pos = Vector3(0.0,-1.0,0.0).normalized().rotated(Vector3(0.0,0.0,1.0).normalized(),phi) #here you can change the start position of the Sun and axis of rotation
+	moon_pos = Vector3(0.0,1.0,0.0).normalized().rotated(Vector3(1.0,0.0,1.0).normalized(),phi) #Same for Moon
 	$sky_viewport/sky_texture.material.set(\"shader_param/SUN_POS\",sun_pos)
 	$sky_viewport/sky_texture.material.set(\"shader_param/MOON_POS\",moon_pos)
 	$cloud_viewport/cloud_texture.material.set(\"shader_param/MOON_POS\",moon_pos)
+	sun_pos.x *= -1 # The x-axis is inverted on the stage for unknown reasons, so we have fixed this for light source
+	moon_pos.x *= -1
 	var temp: float =0.0
 	if (day_time.x == 0.0 or day_time.x == 1.0 or day_time.x == 2.0 or day_time.x == 11.0):
 		temp = 0.0 #ночь
@@ -116,7 +119,6 @@ func _DAY_TIME_changed(value):
 		light_energy=clamp(0.5-day_time.y/2,0.05,0.5)
 		light_color=lerp(moon_light, sunset_light,light_energy*2.0)
 	day_time.x = temp;
-	#print (day_time)
 	$sky_viewport/sky_texture.material.set(\"shader_param/DAY_TIME\",day_time)
 	light_energy = light_energy *(1-coverage*0.5)
 	$Sun_Moon.light_energy = light_energy
@@ -152,6 +154,10 @@ func _godrays_toggled(button_pressed):
 		god_rays.set_clouds(get_node(\"cloud_viewport\").get_texture())
 	else:
 		remove_child(god_rays)
+
+
+func _set_moon_radius(value):
+		$sky_viewport/sky_texture.material.set(\"shader_param/moon_radius\",value)
 "
 
 [sub_resource type="ShaderMaterial" id=2]
@@ -191,12 +197,12 @@ shader_param/LIGHTING_STRENGTH = Vector3( 0, 0, 0 )
 shader_param/LIGHTTING_POS = Vector3( 0, 1, 0 )
 shader_param/night_color_sky = Color( 0, 0, 0, 1 )
 shader_param/sunset_color_sky = Color( 0.215686, 0.498039, 0.682353, 1 )
-shader_param/sunset_color_horizon = Color( 0.862745, 0.258824, 0.0705882, 1 )
+shader_param/sunset_color_horizon = Color( 1, 0.337255, 0.129412, 1 )
 shader_param/day_color_sky = Color( 0.0705882, 0.180392, 0.501961, 1 )
 shader_param/day_color_horizon = Color( 0.243137, 0.533333, 0.729412, 1 )
-shader_param/sun_color = Color( 0.917647, 0.541176, 0.341176, 1 )
-shader_param/moon_color = Color( 0.929412, 0.937255, 0.811765, 1 )
-shader_param/moon_radius = 0.07
+shader_param/sun_color = Color( 1, 1, 1, 1 )
+shader_param/moon_color = Color( 0.929412, 0.556863, 0.117647, 1 )
+shader_param/moon_radius = 0.2
 shader_param/Noise = ExtResource( 4 )
 shader_param/cloud_env_texture = SubResource( 4 )
 
@@ -226,7 +232,6 @@ texture = SubResource( 3 )
 centered = false
 
 [node name="Sun_Moon" type="DirectionalLight" parent="."]
-transform = Transform( 1, 0, 0, 0, -1.62921e-07, -1, 0, 1, -1.62921e-07, 0, -1, 0 )
 shadow_enabled = true
 shadow_color = Color( 0.3, 0.3, 0.3, 1 )
 directional_shadow_depth_range = 1
@@ -243,10 +248,10 @@ __meta__ = {
 }
 
 [node name="Label" type="Label" parent="Control"]
-margin_left = 14.5021
-margin_top = 363.368
-margin_right = 257.503
-margin_bottom = 377.368
+margin_left = 20.5002
+margin_top = 333.431
+margin_right = 263.501
+margin_bottom = 347.431
 text = "Control: Press G and move sliders."
 __meta__ = {
 "_edit_use_anchors_": false
@@ -434,6 +439,29 @@ margin_right = 134.401
 margin_bottom = 28.5924
 max_value = 1.0
 
+[node name="Label12" type="Label" parent="Control"]
+margin_left = 22.1606
+margin_top = 357.013
+margin_right = 101.161
+margin_bottom = 371.013
+text = "Moon radius"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="HScrollBar" type="HScrollBar" parent="Control/Label12"]
+anchor_left = -0.051
+anchor_right = -0.051
+margin_left = 3.1896
+margin_top = 14.0
+margin_right = 136.19
+margin_bottom = 26.0
+max_value = 1.0
+value = 0.2
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
 [node name="Label11" type="Label" parent="Control"]
 margin_left = 12.4966
 margin_top = 20.5826
@@ -463,4 +491,5 @@ __meta__ = {
 [connection signal="value_changed" from="Control/Label5/HScrollBar" to="." method="_set_exposure"]
 [connection signal="value_changed" from="Control/Label9/HScrollBar" to="." method="_set_attenuation"]
 [connection signal="value_changed" from="Control/Label10/HScrollBar" to="." method="_set_light_size"]
+[connection signal="value_changed" from="Control/Label12/HScrollBar" to="." method="_set_moon_radius"]
 [connection signal="toggled" from="Control/Label11/CheckBox" to="." method="_godrays_toggled"]
