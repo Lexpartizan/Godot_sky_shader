@@ -91,7 +91,7 @@ func _input(event):
 	
 	if event is InputEventMouseMotion:
 		camera_node.rotation.x -= event.relative.y*Sensitivity_X
-		camera_node.rotation.x = clamp(camera_node.rotation.x,MIN_ROT_Y,MAX_ROT_Y)
+		#camera_node.rotation.x = clamp(camera_node.rotation.x,MIN_ROT_Y,MAX_ROT_Y)
 		camera_node.rotation.y -= event.relative.x*Sensitivity_Y
 		if camera_node.rotation.y >PI:
 			camera_node.rotation.y -= PI*2
