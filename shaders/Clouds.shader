@@ -79,7 +79,7 @@ lowp float density(vec3 pos, vec3 offset)
 {
 	lowp vec3 p = pos * 0.0212242 + offset;
 	float dens = get_noise(p,2.76434);
-	lowp float cov = 1.0 - clamp(COVERAGE,0.2,1.0);
+	lowp float cov = 1.0 - clamp(COVERAGE,0.0,1.0);
 	dens *= smoothstep (cov, cov + .05, dens);
 	return clamp(dens, 0.0, 1.0);	
 }
