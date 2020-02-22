@@ -18,67 +18,36 @@ var light_color :Color = Color(1.0,1.0,1.0,1.0)
 var light_energy: float = 0.05
 var sun_pos: Vector3
 var moon_pos: Vector3
+var moon_radius: float = 0.2 setget set_moon_radius#from 0 to 1
+var moon_phase: float =0 setget set_moon_phase#from 0 to 1
 var lighting_pos: Vector3=Vector3(0.0,1.0,1.0)
+var lighting_strike: bool = false setget set_lighting_strike
 var wind_dir: Vector2=Vector2(1.0,0.0)
-var lighting_strike: bool = false
-var time_off_day: float = 0.0 #from 0 to 1
-var coverage: float = 0.5
+var wind_strength:float setget set_wind_strength#from 0 to 1
+
+var time_of_day: float = 0.0 setget set_time_of_day#from 0 to 1
+var clouds_coverage: float = 0.5 setget set_clouds_coverage#from 0 to 1
+var clouds_height: float =0.35 setget set_clouds_height#from 0 to 1
+var quality: float = 0.25 setget set_quality#from 0 to 1
+
 var god_rays
 
 func _ready():
 	if not show_controls:
 		$Control.queue_free()
 	god_rays = get_node(\"GodRays\")
-	_godrays_toggled(false)
+	set_god_rays(false)
 	_set_attenuation(3.0)
 	_set_exposure(1.0)
 	_set_light_size(0.3)
 	$Env.environment.background_sky.set_panorama($sky_viewport.get_texture())
-	_DAY_TIME_changed(time_off_day)
+	set_time_of_day(time_of_day)
 
-func _process(delta):
-	iTime+=delta
-	$sky_viewport/sky_texture.material.set(\"shader_param/iTime\",iTime)
-	$cloud_viewport/cloud_texture.material.set(\"shader_param/iTime\",iTime)
-	if (lighting_strike):
-		var lighting_stength = clamp(sin(iTime*31.4),0.1,1.0)
-		lighting_pos = lighting_pos.normalized()
-		$Sun_Moon.light_color = sun_light
-		$Sun_Moon.light_energy = lighting_stength*2
-		$sky_viewport/sky_texture.material.set(\"shader_param/LIGHTTING_POS\",lighting_pos)
-		$sky_viewport/sky_texture.material.set(\"shader_param/LIGHTING_STRENGTH\",Vector3(lighting_stength,lighting_stength,lighting_stength))
-		lighting_pos.x *= -1
-		$Sun_Moon.look_at_from_position(lighting_pos,Vector3.ZERO,Vector3.UP);
-
-func _lighting_on():
-	lighting_strike = true
-
-func _lighting_off():
-	lighting_strike = false
-	$sky_viewport/sky_texture.material.set(\"shader_param/LIGHTING_STRENGTH\",Vector3(0.0,0.0,0.0))
-	_DAY_TIME_changed(time_off_day)
-		
-func _height_chg(value):
-	$cloud_viewport/cloud_texture.material.set(\"shader_param/HEIGHT\",value)
-		
-func _cov_scb(value):
-	coverage = value
-	$cloud_viewport/cloud_texture.material.set(\"shader_param/COVERAGE\",coverage)
-	$cloud_viewport/cloud_texture.material.set(\"shader_param/ABSORPTION\",coverage+0.75)
-	$cloud_viewport/cloud_texture.material.set(\"shader_param/THICKNESS\",coverage*10+10)
-	_DAY_TIME_changed(time_off_day)
-
-func _quality_scb(value):
-	$cloud_viewport/cloud_texture.material.set(\"shader_param/STEPS\",clamp (value,2,100))
-	
-func _wind(value):
-	$cloud_viewport/cloud_texture.material.set(\"shader_param/WIND\",Vector3(wind_dir.x,0.0,wind_dir.y).normalized()*value)
-	
-func _DAY_TIME_changed(value):
-	time_off_day = value;
+func set_time_of_day(value):
+	time_of_day = value;
 	var day_time: Vector2 = Vector2()
-	day_time.x = floor(time_off_day/0.0835) #the period of day (2 hours)
-	day_time.y = clamp(fmod(time_off_day,0.0835)*12.0,0.01,0.99); #Time in a period of day in the range from 0 to 1.
+	day_time.x = floor(time_of_day/0.0835) #the period of day (2 hours)
+	day_time.y = clamp(fmod(time_of_day,0.0835)*12.0,0.01,0.99); #Time in a period of day in the range from 0 to 1.
 	var phi: float =0.0;
 	phi = ((day_time.x-1.0)*30.0+day_time.y *30.0)*0.0174533 #30 degrees in period of day and transform to radians.
 	sun_pos = Vector3(0.0,-1.0,0.0).normalized().rotated(Vector3(0.0,0.0,1.0).normalized(),phi) #here you can change the start position of the Sun and axis of rotation
@@ -120,32 +89,73 @@ func _DAY_TIME_changed(value):
 		light_color=lerp(moon_light, sunset_light,light_energy*2.0)
 	day_time.x = temp;
 	$sky_viewport/sky_texture.material.set(\"shader_param/DAY_TIME\",day_time)
-	light_energy = light_energy *(1-coverage*0.5)
+	light_energy = light_energy *(1-clouds_coverage*0.5)
 	$Sun_Moon.light_energy = light_energy
 	$Sun_Moon.light_color = light_color
 	$Env.environment.ambient_light_energy = light_energy
 	$Env.environment.ambient_light_color = light_color
-	$Env.environment.adjustment_saturation = 1-coverage*0.5
+	$Env.environment.adjustment_saturation = 1-clouds_coverage*0.5
 
-func _moon(value):
-	$sky_viewport/sky_texture.material.set(\"shader_param/MOON_PHASE\",value)
+func set_lighting_strike(value):
+	if value:
+		lighting_strike = true
+	else:
+		lighting_strike = false
+		$sky_viewport/sky_texture.material.set(\"shader_param/LIGHTING_STRENGTH\",Vector3(0.0,0.0,0.0))
+		set_time_of_day(time_of_day)
+
+func set_clouds_height(value):
+	$cloud_viewport/cloud_texture.material.set(\"shader_param/HEIGHT\",value)
+
+func set_clouds_coverage(value):
+	clouds_coverage = value
+	$cloud_viewport/cloud_texture.material.set(\"shader_param/COVERAGE\",clouds_coverage)
+	$cloud_viewport/cloud_texture.material.set(\"shader_param/ABSORPTION\",clouds_coverage+0.75)
+	$cloud_viewport/cloud_texture.material.set(\"shader_param/THICKNESS\",clouds_coverage*10+10)
+	set_time_of_day(time_of_day)
+
+func set_quality(value):
+	$cloud_viewport/cloud_texture.material.set(\"shader_param/STEPS\",clamp (int(value*100),2,100))
+
+func set_wind_strength(value):
+	wind_strength = value
+	$cloud_viewport/cloud_texture.material.set(\"shader_param/WIND\",Vector3(wind_dir.x,0.0,wind_dir.y).normalized()*wind_strength)
+
+func set_moon_radius(value):
+	moon_radius = value
+	$sky_viewport/sky_texture.material.set(\"shader_param/moon_radius\",value)
+
+func set_moon_phase(value):
+	moon_phase = value # convert to diapazon -0.2...+0.2
+	$sky_viewport/sky_texture.material.set(\"shader_param/MOON_PHASE\",moon_phase*0.4-0.2)
+
+func _process(delta):
+	iTime+=delta
+	$sky_viewport/sky_texture.material.set(\"shader_param/iTime\",iTime)
+	$cloud_viewport/cloud_texture.material.set(\"shader_param/iTime\",iTime)
+	if (lighting_strike):
+		var lighting_stength = clamp(sin(iTime*31.4),0.1,1.0)
+		lighting_pos = lighting_pos.normalized()
+		$Sun_Moon.light_color = sun_light
+		$Sun_Moon.light_energy = lighting_stength*2
+		$sky_viewport/sky_texture.material.set(\"shader_param/LIGHTTING_POS\",lighting_pos)
+		$sky_viewport/sky_texture.material.set(\"shader_param/LIGHTING_STRENGTH\",Vector3(lighting_stength,lighting_stength,lighting_stength))
+		lighting_pos.x *= -1
+		$Sun_Moon.look_at_from_position(lighting_pos,Vector3.ZERO,Vector3.UP);
 
 func _set_exposure(value):
 	if god_rays:
 		god_rays.set_exposure(value)
-		print (\"exp: \",value)
 
 func _set_attenuation(value):
 	if god_rays:
 		god_rays.set_attenuation(value)
-		print (\"att: \",value)
 	
 func _set_light_size(value):
 	if god_rays:
 		god_rays.set_light_size(value)
-		print (\"light_sze: \",value)
 
-func _godrays_toggled(button_pressed):
+func set_god_rays(button_pressed):
 	if not god_rays:
 		return
 	if button_pressed:
@@ -154,10 +164,6 @@ func _godrays_toggled(button_pressed):
 		god_rays.set_clouds(get_node(\"cloud_viewport\").get_texture())
 	else:
 		remove_child(god_rays)
-
-
-func _set_moon_radius(value):
-		$sky_viewport/sky_texture.material.set(\"shader_param/moon_radius\",value)
 "
 
 [sub_resource type="ShaderMaterial" id=2]
@@ -315,8 +321,8 @@ margin_left = 5.0
 margin_top = 16.2108
 margin_right = 145.0
 margin_bottom = 28.2108
-step = 1.0
-value = 25.0
+max_value = 1.0
+value = 0.25
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -387,9 +393,7 @@ margin_left = -1.95068
 margin_top = 17.8521
 margin_right = 135.049
 margin_bottom = 29.8521
-min_value = -0.2
-max_value = 0.2
-value = -0.2
+max_value = 1.0
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -480,16 +484,15 @@ margin_bottom = 37.9668
 __meta__ = {
 "_edit_use_anchors_": false
 }
-[connection signal="value_changed" from="Control/Label2/HScrollBar" to="." method="_height_chg"]
-[connection signal="value_changed" from="Control/Label3/HScrollBar" to="." method="_cov_scb"]
-[connection signal="value_changed" from="Control/Label6/HScrollBar" to="." method="_quality_scb"]
-[connection signal="value_changed" from="Control/Label7/HScrollBar" to="." method="_DAY_TIME_changed"]
-[connection signal="value_changed" from="Control/Label8/HScrollBar" to="." method="_wind"]
-[connection signal="button_down" from="Control/Button" to="." method="_lighting_on"]
-[connection signal="button_up" from="Control/Button" to="." method="_lighting_off"]
-[connection signal="value_changed" from="Control/Label4/HScrollBar" to="." method="_moon"]
+[connection signal="value_changed" from="Control/Label2/HScrollBar" to="." method="set_clouds_height"]
+[connection signal="value_changed" from="Control/Label3/HScrollBar" to="." method="set_clouds_coverage"]
+[connection signal="value_changed" from="Control/Label6/HScrollBar" to="." method="set_quality"]
+[connection signal="value_changed" from="Control/Label7/HScrollBar" to="." method="set_time_of_day"]
+[connection signal="value_changed" from="Control/Label8/HScrollBar" to="." method="set_wind_strength"]
+[connection signal="toggled" from="Control/Button" to="." method="set_lighting_strike"]
+[connection signal="value_changed" from="Control/Label4/HScrollBar" to="." method="set_moon_phase"]
 [connection signal="value_changed" from="Control/Label5/HScrollBar" to="." method="_set_exposure"]
 [connection signal="value_changed" from="Control/Label9/HScrollBar" to="." method="_set_attenuation"]
 [connection signal="value_changed" from="Control/Label10/HScrollBar" to="." method="_set_light_size"]
-[connection signal="value_changed" from="Control/Label12/HScrollBar" to="." method="_set_moon_radius"]
-[connection signal="toggled" from="Control/Label11/CheckBox" to="." method="_godrays_toggled"]
+[connection signal="value_changed" from="Control/Label12/HScrollBar" to="." method="set_moon_radius"]
+[connection signal="toggled" from="Control/Label11/CheckBox" to="." method="set_god_rays"]
