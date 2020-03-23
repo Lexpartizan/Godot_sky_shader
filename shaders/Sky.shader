@@ -60,7 +60,6 @@ lowp float get_noise(vec3 p, float FBM_FREQ)
 
 lowp vec4 draw_night_sky (float attenuation, float sun_amount, vec3 rd, float cld_alpha)
 {
-	lowp float dist =length(MOON_POS-rd);
 	lowp vec4 night_sky = vec4(0.0);
 	float moon_amount = min(pow(max(dot(rd, MOON_POS), 0.0), 500.0/moon_radius) * 100.0, 1.0);
 	moon_amount *= get_noise(MOON_POS - rd, 3.1415926536);//some noise, if you want
@@ -97,8 +96,7 @@ void fragment(){
 			break;
 		}
 	case 1:
-		{	lowp float moon_dist = length(MOON_POS-rd);
-			sky = mix(mix(night_color_sky, sunset_color_horizon, DAY_TIME.y), mix(night_color_sky, sunset_color_sky, DAY_TIME.y),rd.y) + sun_amount;
+		{	sky = mix(mix(night_color_sky, sunset_color_horizon, DAY_TIME.y), mix(night_color_sky, sunset_color_sky, DAY_TIME.y),rd.y) + sun_amount;
 			sky.rgb = mix (vec3(0.0), sky.rgb, DAY_TIME.y); //gradually brighten the sky with sunrise
 			sky += draw_night_sky(1.0-DAY_TIME.y,sun_amount.r,rd,cld.a);
 			cld.rgb = mix (vec3(0.0), cld.rgb, DAY_TIME.y); //gradually brighten the clouds with sunrise
