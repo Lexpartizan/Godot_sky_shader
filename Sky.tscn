@@ -229,7 +229,7 @@ func set_god_rays(button_pressed):
 [sub_resource type="ShaderMaterial" id=2]
 resource_local_to_scene = true
 shader = ExtResource( 2 )
-shader_param/iTime = 38.6182
+shader_param/iTime = 18.0215
 shader_param/WIND = Vector3( 0.1, 0, 0 )
 shader_param/MOON_POS = Vector3( -0.707097, 0.00523525, 0.707097 )
 shader_param/COVERAGE = 0.5
@@ -243,7 +243,6 @@ shader_param/moon_radius = 0.07
 shader_param/Noise = ExtResource( 4 )
 
 [sub_resource type="ImageTexture" id=3]
-resource_local_to_scene = true
 flags = 0
 lossy_quality = 1.0
 flags = 0
@@ -256,7 +255,7 @@ viewport_path = NodePath("cloud_viewport")
 [sub_resource type="ShaderMaterial" id=5]
 resource_local_to_scene = true
 shader = ExtResource( 1 )
-shader_param/iTime = 38.6182
+shader_param/iTime = 18.0215
 shader_param/DAY_TIME = Vector2( 1, 0.99 )
 shader_param/SUN_POS = Vector3( 0.999986, -0.00523525, 0 )
 shader_param/MOON_POS = Vector3( -0.707097, 0.00523525, 0.707097 )
@@ -280,14 +279,16 @@ wind_strength = 0.1
 clouds_coverage = 0.5
 clouds_height = 0.35
 quality = 0.25
-hours = 8
+hours = 7
+minutes = 59
+seconds = 59
 time_of_day = 0.333333
 
 [node name="Env" type="WorldEnvironment" parent="."]
 environment = ExtResource( 6 )
 
 [node name="Sun_Moon" type="DirectionalLight" parent="."]
-transform = Transform( -4.37114e-08, -0.00523524, -0.999985, 0, 0.999986, -0.00523524, 1, -2.2884e-10, -4.37108e-08, -0.999986, -0.00523525, 0 )
+transform = Transform( -4.37114e-08, -0.00523525, -0.999985, 0, 0.999986, -0.00523524, 1, -2.2884e-10, -4.37107e-08, -0.999986, -0.00523525, 0 )
 light_color = Color( 0.996, 0.699, 0.5525, 1 )
 light_energy = 0.37125
 shadow_enabled = true
