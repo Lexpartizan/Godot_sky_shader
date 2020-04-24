@@ -116,3 +116,7 @@ Example on how to set up the shaders in your project if you don't want to use th
 * Stretched sun and moon (see issue #5) (becouse this panorama, but for the moon, you could come up with a solution by projecting it onto the camera screen. But I can't do it :-( )
 * Flickering on the cloud edges (these are noise features that can be significantly reduced by increasing the number of quality_steps, but this affects performance.)
 * A vertical seam on the sphere of the PanoramaSky is visible when the clouds move over it (see issue #2)
+*it often throws an error to the console, but it doesn't interfere with the scene work.
+ERROR: create_from_image: Condition "p_image.is_null()" is true.
+   At: scene/resources/texture.cpp:199
+Help wanted.
