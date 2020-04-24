@@ -44,6 +44,15 @@ extents = Vector3( 1, 1, 2.86814 )
 script = SubResource( 1 )
 
 [node name="Sky" parent="." instance=ExtResource( 3 )]
+show_controls = true
+sun_light = Color( 1, 1, 1, 1 )
+moon_light = Color( 0.6, 0.6, 0.8, 1 )
+sunset_light = Color( 1, 0.7, 0.55, 1 )
+moon_radius = 0.0
+moon_phase = 0.0
+wind_dir = Vector2( 1, 0 )
+hours = 19
+time_of_day = 0.833333
 
 [node name="LevelGeometry" type="Spatial" parent="."]
 
