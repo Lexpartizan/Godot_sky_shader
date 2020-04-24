@@ -14,13 +14,10 @@ onready var env = $Env.environment
 onready var sun = $Sun_Moon
 var god_rays
 export(bool) var show_controls := true
-
 var iTime: float=0.0
 export (Color, RGBA) var  sun_light :Color = Color(1.0,1.0,1.0,1.0)
 export (Color, RGBA) var moon_light :Color = Color(0.6,0.6,0.8,1.0)
 export (Color, RGBA) var sunset_light :Color = Color(1.0,0.7,0.55,1.0)
-var light_color :Color = Color(1.0,1.0,1.0,1.0)
-var light_energy: float = 0.05
 var sun_pos: Vector3
 var moon_pos: Vector3
 export (float, 0.0,1.0,0.0001) var moon_radius: float setget set_moon_radius#from 0 to 1
@@ -34,8 +31,9 @@ export (float, 0.0,1.0,0.0001) var clouds_height: float setget set_clouds_height
 export (float, 0.0,1.0,0.0001) var quality: float setget set_quality#from 0 to 1
 export (int, 0, 23) var hours: int setget set_hours
 export (int, 0, 59) var minutes: int setget set_minutes
+export (int, 0, 59) var seconds: int setget set_seconds
 export (float, 0.0,1.0,0.0001) var time_of_day: float setget set_time_of_day#from 0 to 1
-var one_minute: float = 1.0/(24.0*60.0)#What part of a minute takes in a day in the range from 0 to 1
+var one_second: float = 1.0/(24.0*60.0*60)#What part of a second takes in a day in the range from 0 to 1
 
 func set_call_deff_shader_params(node, params, value):
 	node.set(params,value)
@@ -49,7 +47,6 @@ func _ready():
 	call_deferred(\"_set_exposure\",1.0)
 	call_deferred(\"_set_light_size\",0.3)
 	env.background_sky.set_panorama($sky_viewport.get_texture())
-	
 	call_deferred(\"set_moon_phase\",moon_phase)
 	call_deferred(\"set_moon_radius\",moon_radius)
 	call_deferred(\"set_wind_strength\",wind_strength)
@@ -60,23 +57,32 @@ func _ready():
 	
 func set_hours(value):
 	hours = clamp(value,0,23)
-	set_time_of_day((hours*60.0+minutes)*one_minute)
+	set_time_of_day((float(hours*3600+minutes*60+seconds))*one_second)
 	
 func set_minutes(value):
 	minutes = clamp(value,0,59)
-	set_time_of_day((hours*60.0+minutes)*one_minute)
+	set_time_of_day((float(hours*3600+minutes*60+seconds))*one_second)
+	
+func set_seconds(value):
+	seconds = clamp(value,0,59)
+	set_time_of_day((float(hours*3600+minutes*60+seconds))*one_second)
 		
 func set_time_of_day(value):
 	time_of_day = value
-	var time = time_of_day/one_minute
-	hours = int(clamp(time/60.0,0.0,23.0))
-	minutes = int(clamp(time-hours*60.0,0.0,59.0))
-	#print (hours,\":\",minutes)
+	var time = time_of_day/one_second
+	hours = int(clamp(time/3600.0,0.0,23.0))
+	time -= hours*3600
+	minutes = int(clamp(time/60,0.0,59.0))
+	time -= minutes*60
+	seconds = int(clamp(time,0.0,59.0))
+	#print (hours,\":\",minutes,\":\",seconds,\":::\",time_of_day)
 	set_time()
 
 func set_time():
 	if !sun or !env or !sky or !clouds:
 		return
+	var light_color :Color = Color(1.0,1.0,1.0,1.0)
+	var light_energy: float = 0.05
 	var day_time: Vector2 = Vector2()
 	day_time.x = floor(time_of_day/0.0835) #the period of day (2 hours)
 	day_time.y = clamp(fmod(time_of_day,0.0835)*12.0,0.01,0.99); #Time in a period of day in the range from 0 to 1.
@@ -223,9 +229,9 @@ func set_god_rays(button_pressed):
 [sub_resource type="ShaderMaterial" id=2]
 resource_local_to_scene = true
 shader = ExtResource( 2 )
-shader_param/iTime = 1170.55
+shader_param/iTime = 38.6182
 shader_param/WIND = Vector3( 0.1, 0, 0 )
-shader_param/MOON_POS = Vector3( -0.356754, -0.863396, 0.356754 )
+shader_param/MOON_POS = Vector3( -0.707097, 0.00523525, 0.707097 )
 shader_param/COVERAGE = 0.5
 shader_param/HEIGHT = 0.35
 shader_param/THICKNESS = 15.0
@@ -250,10 +256,10 @@ viewport_path = NodePath("cloud_viewport")
 [sub_resource type="ShaderMaterial" id=5]
 resource_local_to_scene = true
 shader = ExtResource( 1 )
-shader_param/iTime = 1170.55
-shader_param/DAY_TIME = Vector2( 3, 0.99 )
-shader_param/SUN_POS = Vector3( 0.504527, 0.863396, 0 )
-shader_param/MOON_POS = Vector3( -0.356754, -0.863396, 0.356754 )
+shader_param/iTime = 38.6182
+shader_param/DAY_TIME = Vector2( 1, 0.99 )
+shader_param/SUN_POS = Vector3( 0.999986, -0.00523525, 0 )
+shader_param/MOON_POS = Vector3( -0.707097, 0.00523525, 0.707097 )
 shader_param/MOON_PHASE = -0.2
 shader_param/LIGHTING_STRENGTH = Vector3( 0, 0, 0 )
 shader_param/LIGHTTING_POS = Vector3( 0, 1, 0 )
@@ -274,16 +280,16 @@ wind_strength = 0.1
 clouds_coverage = 0.5
 clouds_height = 0.35
 quality = 0.25
-hours = 12
-time_of_day = 0.5
+hours = 8
+time_of_day = 0.333333
 
 [node name="Env" type="WorldEnvironment" parent="."]
 environment = ExtResource( 6 )
 
 [node name="Sun_Moon" type="DirectionalLight" parent="."]
-transform = Transform( -4.37114e-08, 0.863396, -0.504526, 0, 0.504527, 0.863396, 1, 3.77402e-08, -2.20535e-08, -0.504527, 0.863396, 0 )
-light_color = Color( 0.6, 0.6, 0.8, 1 )
-light_energy = 0.75
+transform = Transform( -4.37114e-08, -0.00523524, -0.999985, 0, 0.999986, -0.00523524, 1, -2.2884e-10, -4.37108e-08, -0.999986, -0.00523525, 0 )
+light_color = Color( 0.996, 0.699, 0.5525, 1 )
+light_energy = 0.37125
 shadow_enabled = true
 shadow_color = Color( 0.3, 0.3, 0.3, 1 )
 directional_shadow_depth_range = 1
