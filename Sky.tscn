@@ -15,9 +15,15 @@ onready var sun = $Sun_Moon
 var god_rays
 export(bool) var show_controls := true
 var iTime: float=0.0
-export (Color, RGBA) var  sun_light :Color = Color(1.0,1.0,1.0,1.0)
+export (Color, RGBA) var sun_light :Color = Color(1.0,1.0,1.0,1.0) setget set_sun_light
 export (Color, RGBA) var moon_light :Color = Color(0.6,0.6,0.8,1.0)
 export (Color, RGBA) var sunset_light :Color = Color(1.0,0.7,0.55,1.0)
+export (Color, RGBA) var night_color_sky :Color = Color(0.0,0.0,0.0,1.0) setget set_night_color_sky
+export (Color, RGBA) var sunset_color_horizon :Color = Color(1.0,0.33,0.12,1.0) setget set_sunset_color_horizon
+export (Color, RGBA) var day_color_sky :Color = Color(0.07,0.18,0.50,1.0) setget set_day_color_sky
+export (Color, RGBA) var day_color_horizon :Color = Color(0.24,0.53,0.72,1.0)setget set_day_color_horizon
+export (Color, RGBA) var moon_color :Color = Color(0.92,0.55,0.11,1.0)setget set_moon_color
+export (Color, RGBA) var clouds_color :Color = Color(1.0,1.0,1.0,1.0)setget set_clouds_color
 var sun_pos: Vector3
 var moon_pos: Vector3
 export (float, 0.0,1.0,0.0001) var moon_radius: float setget set_moon_radius#from 0 to 1
@@ -47,6 +53,14 @@ func _ready():
 	call_deferred(\"_set_exposure\",1.0)
 	call_deferred(\"_set_light_size\",0.3)
 	env.background_sky.set_panorama($sky_viewport.get_texture())
+	call_deferred(\"set_sun_light\",sun_light)
+	call_deferred(\"set_night_color_sky\",night_color_sky)
+	call_deferred(\"set_sunset_color_horizon\",sunset_color_horizon)
+	call_deferred(\"set_day_color_sky\",day_color_sky)
+	call_deferred(\"set_day_color_horizon\",day_color_horizon)
+	call_deferred(\"set_moon_color\",moon_color)
+	call_deferred(\"set_clouds_color\",clouds_color)
+	
 	call_deferred(\"set_moon_phase\",moon_phase)
 	call_deferred(\"set_moon_radius\",moon_radius)
 	call_deferred(\"set_wind_strength\",wind_strength)
@@ -54,6 +68,7 @@ func _ready():
 	call_deferred(\"set_quality\",quality)
 	call_deferred(\"set_clouds_height\",clouds_height)
 	call_deferred(\"set_clouds_coverage\",clouds_coverage)
+	
 	
 func set_hours(value):
 	hours = clamp(value,0,23)
@@ -177,7 +192,7 @@ func set_wind_dir(value):
 func set_wind_strength(value):
 	wind_strength = value
 	if clouds:
-		call_deferred(\"set_call_deff_shader_params\", clouds, \"shader_param/WIND\",Vector3(wind_dir.x,0.0,wind_dir.y)*wind_strength)
+		call_deferred(\"set_call_deff_shader_params\", clouds, \"shader_param/WIND\",Vector3(-wind_dir.x,0.0,wind_dir.y)*wind_strength)
 	
 func set_moon_radius(value):
 	moon_radius = value
@@ -185,10 +200,46 @@ func set_moon_radius(value):
 		call_deferred(\"set_call_deff_shader_params\", sky, \"shader_param/moon_radius\",value)
 	
 func set_moon_phase(value):
-	moon_phase = value # convert to diapazon -0.2...+0.2
+	moon_phase = value
 	if sky:
-		call_deferred(\"set_call_deff_shader_params\", sky, \"shader_param/MOON_PHASE\",moon_phase*0.4-0.2)
+		call_deferred(\"set_call_deff_shader_params\", sky, \"shader_param/MOON_PHASE\",moon_phase*0.4-0.2) # convert to diapazon -0.2...+0.2
+
+func set_sun_light(value):
+	sun_light = value
+	if sky:
+		call_deferred(\"set_call_deff_shader_params\", sky, \"shader_param/sun_color\",sun_light)
+
+func set_night_color_sky(value):
+	night_color_sky = value
+	if sky:
+		call_deferred(\"set_call_deff_shader_params\", sky, \"shader_param/night_color_sky\",night_color_sky)
+
+func set_sunset_color_horizon(value):
+	sunset_color_horizon = value
+	if sky:
+		call_deferred(\"set_call_deff_shader_params\", sky, \"shader_param/sunset_color_horizon\",sunset_color_horizon)
+
+func set_day_color_sky(value):
+	day_color_sky = value
+	if sky:
+		call_deferred(\"set_call_deff_shader_params\", sky, \"shader_param/day_color_sky\",day_color_sky)
 	
+func set_day_color_horizon(value):
+	day_color_horizon = value
+	if sky:
+		call_deferred(\"set_call_deff_shader_params\", sky, \"shader_param/sunset_color_sky\",day_color_horizon)
+		call_deferred(\"set_call_deff_shader_params\", sky, \"shader_param/day_color_horizon\",day_color_horizon)
+
+func set_moon_color(value):
+	moon_color = value
+	if sky:
+		call_deferred(\"set_call_deff_shader_params\", sky, \"shader_param/moon_color\",moon_color)
+
+func set_clouds_color(value):
+	clouds_color = value
+	if clouds:
+		call_deferred(\"set_call_deff_shader_params\", clouds, \"shader_param/clouds_color\",clouds_color)
+
 func _process(delta):
 	iTime+=delta
 	call_deferred(\"set_call_deff_shader_params\", sky, \"shader_param/iTime\",iTime)
@@ -229,9 +280,9 @@ func set_god_rays(button_pressed):
 [sub_resource type="ShaderMaterial" id=2]
 resource_local_to_scene = true
 shader = ExtResource( 2 )
-shader_param/iTime = 18.0215
+shader_param/iTime = 59.7022
 shader_param/WIND = Vector3( 0.1, 0, 0 )
-shader_param/MOON_POS = Vector3( -0.707097, 0.00523525, 0.707097 )
+shader_param/MOON_POS = Vector3( -0.683773, -0.254772, 0.683773 )
 shader_param/COVERAGE = 0.5
 shader_param/HEIGHT = 0.35
 shader_param/THICKNESS = 15.0
@@ -255,42 +306,44 @@ viewport_path = NodePath("cloud_viewport")
 [sub_resource type="ShaderMaterial" id=5]
 resource_local_to_scene = true
 shader = ExtResource( 1 )
-shader_param/iTime = 18.0215
-shader_param/DAY_TIME = Vector2( 1, 0.99 )
-shader_param/SUN_POS = Vector3( 0.999986, -0.00523525, 0 )
-shader_param/MOON_POS = Vector3( -0.707097, 0.00523525, 0.707097 )
+shader_param/iTime = 59.7022
+shader_param/DAY_TIME = Vector2( 2, 0.492 )
+shader_param/SUN_POS = Vector3( 0.967001, 0.254772, 0 )
+shader_param/MOON_POS = Vector3( -0.683773, -0.254772, 0.683773 )
 shader_param/MOON_PHASE = -0.2
 shader_param/LIGHTING_STRENGTH = Vector3( 0, 0, 0 )
 shader_param/LIGHTTING_POS = Vector3( 0, 1, 0 )
 shader_param/night_color_sky = Color( 0, 0, 0, 1 )
-shader_param/sunset_color_sky = Color( 0.215686, 0.498039, 0.682353, 1 )
-shader_param/sunset_color_horizon = Color( 1, 0.337255, 0.129412, 1 )
-shader_param/day_color_sky = Color( 0.0705882, 0.180392, 0.501961, 1 )
-shader_param/day_color_horizon = Color( 0.243137, 0.533333, 0.729412, 1 )
-shader_param/sun_color = Color( 1, 1, 1, 1 )
-shader_param/moon_color = Color( 0.929412, 0.556863, 0.117647, 1 )
-shader_param/moon_radius = 0.0
+shader_param/sunset_color_sky = Color( 0, 0, 0, 1 )
+shader_param/sunset_color_horizon = Color( 0, 0, 0, 1 )
+shader_param/day_color_sky = Color( 0, 0, 0, 1 )
+shader_param/day_color_horizon = Color( 0, 0, 0, 1 )
+shader_param/sun_color = Color( 0, 0, 0, 1 )
+shader_param/moon_color = Color( 0, 0, 0, 1 )
+shader_param/moon_radius = 0.2
 shader_param/Noise = ExtResource( 4 )
 shader_param/cloud_env_texture = SubResource( 4 )
 
 [node name="Sky" type="Spatial"]
 script = SubResource( 1 )
+day_color_horizon = Color( 0.239216, 0.529412, 1, 1 )
+moon_color = Color( 0.94902, 0.54902, 0.109804, 1 )
+moon_radius = 0.2
+wind_dir = Vector2( -1, 0 )
 wind_strength = 0.1
 clouds_coverage = 0.5
 clouds_height = 0.35
 quality = 0.25
-hours = 7
-minutes = 59
-seconds = 59
-time_of_day = 0.333333
+hours = 9
+time_of_day = 0.375
 
 [node name="Env" type="WorldEnvironment" parent="."]
 environment = ExtResource( 6 )
 
 [node name="Sun_Moon" type="DirectionalLight" parent="."]
-transform = Transform( -4.37114e-08, -0.00523525, -0.999985, 0, 0.999986, -0.00523524, 1, -2.2884e-10, -4.37107e-08, -0.999986, -0.00523525, 0 )
-light_color = Color( 0.996, 0.699, 0.5525, 1 )
-light_energy = 0.37125
+transform = Transform( -4.37114e-08, 0.254772, -0.967, 0, 0.967002, 0.254771, 1, 1.11364e-08, -4.22689e-08, -0.967001, 0.254772, 0 )
+light_color = Color( 1, 0.8476, 0.7714, 1 )
+light_energy = 0.5595
 shadow_enabled = true
 shadow_color = Color( 0.3, 0.3, 0.3, 1 )
 directional_shadow_depth_range = 1
