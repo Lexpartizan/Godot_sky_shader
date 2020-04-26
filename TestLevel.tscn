@@ -51,13 +51,13 @@ sunset_light = Color( 1, 0.7, 0.55, 1 )
 night_color_sky = Color( 0, 0, 0, 1 )
 sunset_color_horizon = Color( 1, 0.33, 0.12, 1 )
 day_color_sky = Color( 0.07, 0.18, 0.5, 1 )
-day_color_horizon = Color( 0.239216, 0.529412, 1, 1 )
 clouds_color = Color( 1, 1, 1, 1 )
 moon_phase = 0.0
-hours = 12
-minutes = 59
-seconds = 59
-time_of_day = 0.541655
+hours = 11
+minutes = 35
+seconds = 5
+time_of_day = 0.4827
+night_level_light = 0.05
 
 [node name="LevelGeometry" type="Spatial" parent="."]
 
