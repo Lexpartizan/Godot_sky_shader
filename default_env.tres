@@ -1,15 +1,15 @@
 [gd_resource type="Environment" load_steps=3 format=2]
 
-[sub_resource type="ViewportTexture" id=3]
+[sub_resource type="ViewportTexture" id=1]
 
 [sub_resource type="PanoramaSky" id=2]
-panorama = SubResource( 3 )
+panorama = SubResource( 1 )
 
 [resource]
 background_mode = 2
 background_sky = SubResource( 2 )
-ambient_light_color = Color( 1, 1, 1, 1 )
-ambient_light_energy = 0.75
+ambient_light_color = Color( 1, 0.8476, 0.7714, 1 )
+ambient_light_energy = 0.5595
 ambient_light_sky_contribution = 0.0
 fog_enabled = true
 fog_sun_color = Color( 1, 1, 1, 1 )
