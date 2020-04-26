@@ -40,6 +40,7 @@ export (int, 0, 59) var minutes: int setget set_minutes
 export (int, 0, 59) var seconds: int setget set_seconds
 export (float, 0.0,1.0,0.0001) var time_of_day: float setget set_time_of_day#from 0 to 1
 var one_second: float = 1.0/(24.0*60.0*60)#What part of a second takes in a day in the range from 0 to 1
+export var night_level_light: float=0.05 setget set_night_level_light
 
 func set_call_deff_shader_params(node, params, value):
 	node.set(params,value)
@@ -68,8 +69,11 @@ func _ready():
 	call_deferred(\"set_quality\",quality)
 	call_deferred(\"set_clouds_height\",clouds_height)
 	call_deferred(\"set_clouds_coverage\",clouds_coverage)
-	
-	
+
+func set_night_level_light(value):
+	night_level_light = value
+	set_time()
+
 func set_hours(value):
 	hours = clamp(value,0,23)
 	set_time_of_day((float(hours*3600+minutes*60+seconds))*one_second)
@@ -97,7 +101,7 @@ func set_time():
 	if !sun or !env or !sky or !clouds:
 		return
 	var light_color :Color = Color(1.0,1.0,1.0,1.0)
-	var light_energy: float = 0.05
+	var light_energy: float = night_level_light
 	var day_time: Vector2 = Vector2()
 	day_time.x = floor(time_of_day/0.0835) #the period of day (2 hours)
 	day_time.y = clamp(fmod(time_of_day,0.0835)*12.0,0.01,0.99); #Time in a period of day in the range from 0 to 1.
@@ -111,38 +115,40 @@ func set_time():
 	
 	sun_pos.x *= -1 # The x-axis is inverted on the stage for unknown reasons, so we have fixed this for light source
 	moon_pos.x *= -1
-	var temp: float =0.0
+	var day_period: float =0.0
 	var position = Vector3()
-	if (day_time.x == 0.0 or day_time.x == 1.0 or day_time.x == 2.0 or day_time.x == 11.0):
-		temp = 0.0 #night. this is value for shader.
-		position = moon_pos
-		light_energy = 0.05 #level of illumination
-		light_color = moon_light #color light from sun
-	if (day_time.x == 3.0):
-		temp = 1.0 #from night to dawn
-		position = sun_pos
-		light_energy=clamp(day_time.y/2,0.05,0.5)
-		light_color=lerp(moon_light,sunset_light,light_energy*2.0)
-	if (day_time.x == 4.0):
-		temp = 2.0 #from dawn to day
-		position = sun_pos
-		light_energy=clamp(0.5+day_time.y/2,0.5,1.0)
-		light_color=lerp(sunset_light,sun_light,light_energy*2.0 -1.0)
-	if (day_time.x == 5.0 or day_time.x == 6.0 or day_time.x == 7.0 or day_time.x == 8.0):
-		temp = 3.0 #day
-		position = sun_pos
-		light_energy =1.0
-	if (day_time.x == 9.0):
-		temp = 4.0 #from day to sunset
-		position = sun_pos
-		light_energy=clamp(1.0-day_time.y/2,0.5,1.0)
-		light_color=lerp(sunset_light,sun_light,light_energy*2.0 -1.0)
-	if (day_time.x == 10.0):
-		temp = 5.0 #from sunset to night
-		position = sun_pos
-		light_energy=clamp(0.5-day_time.y/2,0.05,0.5)
-		light_color=lerp(moon_light, sunset_light,light_energy*2.0)
-	day_time.x = temp;
+	match day_time.x:
+		5.0,6.0,7.0,8.0:
+			day_period = 3.0 #day. this is value for shader.
+			position = sun_pos
+			light_energy =1.0 #level of illumination
+			light_color = sun_light #color light from sun
+		0.0,1.0,2.0,11.0:
+			day_period = 0.0 #night. 
+			position = moon_pos
+			light_energy = night_level_light
+			light_color = moon_light
+		3.0:
+			day_period = 1.0 #from night to dawn
+			position = sun_pos
+			light_energy=clamp(day_time.y/2,night_level_light,0.5)
+			light_color=lerp(moon_light,sunset_light,light_energy*2.0)
+		4.0:
+			day_period = 2.0 #from dawn to day
+			position = sun_pos
+			light_energy=clamp(0.5+day_time.y/2,0.5,1.0)
+			light_color=lerp(sunset_light,sun_light,light_energy*2.0 -1.0)
+		9.0:
+			day_period = 4.0 #from day to sunset
+			position = sun_pos
+			light_energy=clamp(1.0-day_time.y/2,0.5,1.0)
+			light_color=lerp(sunset_light,sun_light,light_energy*2.0 -1.0)
+		10.0:
+			day_period = 5.0 #from sunset to night
+			position = sun_pos
+			light_energy=clamp(0.5-day_time.y/2,night_level_light,0.5)
+			light_color=lerp(moon_light, sunset_light,light_energy*2.0)
+	day_time.x = day_period;
 	call_deferred(\"set_call_deff_shader_params\", sky, \"shader_param/DAY_TIME\",day_time)
 	sun.look_at_from_position(position,Vector3.ZERO,Vector3.UP); # move sun to position and look at center scene from position
 	light_energy = light_energy *(1-clouds_coverage*0.5)
@@ -192,7 +198,7 @@ func set_wind_dir(value):
 func set_wind_strength(value):
 	wind_strength = value
 	if clouds:
-		call_deferred(\"set_call_deff_shader_params\", clouds, \"shader_param/WIND\",Vector3(-wind_dir.x,0.0,wind_dir.y)*wind_strength)
+		call_deferred(\"set_call_deff_shader_params\", clouds, \"shader_param/WIND\",Vector3(-wind_dir.x,0.0,wind_dir.y)*wind_strength) #The x-axis is inverted on the stage for unknown reasons, so we have fixed this for light source
 	
 func set_moon_radius(value):
 	moon_radius = value
@@ -280,7 +286,7 @@ func set_god_rays(button_pressed):
 [sub_resource type="ShaderMaterial" id=2]
 resource_local_to_scene = true
 shader = ExtResource( 2 )
-shader_param/iTime = 59.7022
+shader_param/iTime = 274.533
 shader_param/WIND = Vector3( 0.1, 0, 0 )
 shader_param/MOON_POS = Vector3( -0.683773, -0.254772, 0.683773 )
 shader_param/COVERAGE = 0.5
@@ -306,7 +312,7 @@ viewport_path = NodePath("cloud_viewport")
 [sub_resource type="ShaderMaterial" id=5]
 resource_local_to_scene = true
 shader = ExtResource( 1 )
-shader_param/iTime = 59.7022
+shader_param/iTime = 274.533
 shader_param/DAY_TIME = Vector2( 2, 0.492 )
 shader_param/SUN_POS = Vector3( 0.967001, 0.254772, 0 )
 shader_param/MOON_POS = Vector3( -0.683773, -0.254772, 0.683773 )
@@ -314,12 +320,12 @@ shader_param/MOON_PHASE = -0.2
 shader_param/LIGHTING_STRENGTH = Vector3( 0, 0, 0 )
 shader_param/LIGHTTING_POS = Vector3( 0, 1, 0 )
 shader_param/night_color_sky = Color( 0, 0, 0, 1 )
-shader_param/sunset_color_sky = Color( 0, 0, 0, 1 )
-shader_param/sunset_color_horizon = Color( 0, 0, 0, 1 )
-shader_param/day_color_sky = Color( 0, 0, 0, 1 )
-shader_param/day_color_horizon = Color( 0, 0, 0, 1 )
-shader_param/sun_color = Color( 0, 0, 0, 1 )
-shader_param/moon_color = Color( 0, 0, 0, 1 )
+shader_param/sunset_color_sky = Color( 0.239216, 0.529412, 1, 1 )
+shader_param/sunset_color_horizon = Color( 1, 0.33, 0.12, 1 )
+shader_param/day_color_sky = Color( 0.07, 0.18, 0.5, 1 )
+shader_param/day_color_horizon = Color( 0.239216, 0.529412, 1, 1 )
+shader_param/sun_color = Color( 1, 1, 1, 1 )
+shader_param/moon_color = Color( 0.94902, 0.54902, 0.109804, 1 )
 shader_param/moon_radius = 0.2
 shader_param/Noise = ExtResource( 4 )
 shader_param/cloud_env_texture = SubResource( 4 )
