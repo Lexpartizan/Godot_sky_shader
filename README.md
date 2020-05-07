@@ -120,3 +120,6 @@ Example on how to set up the shaders in your project if you don't want to use th
 ERROR: create_from_image: Condition "p_image.is_null()" is true.
    At: scene/resources/texture.cpp:199
 Help wanted.
+
+
+Attention! After change texture resolution reload scene with sky!
