@@ -1,6 +1,5 @@
 shader_type canvas_item;
 // USING https://www.shadertoy.com/view/XtBXDw for 3dclouds and https://www.shadertoy.com/view/4dsXWn for 2d clouds
-uniform float iTime;
 uniform sampler2D Noise;
 uniform vec2 DAY_TIME;
 uniform vec3 SUN_POS; //normalize this vector in script!
@@ -20,7 +19,7 @@ uniform float moon_radius;
 
 uniform sampler2D cloud_env_texture;
 
-lowp vec3 rotate_y(vec3 v, float angle)
+lowp vec3 rotate_y(lowp vec3 v, lowp float angle)
 {
 	lowp float ca = cos(angle); lowp float sa = sin(angle);
 	return v*mat3(
@@ -29,7 +28,7 @@ lowp vec3 rotate_y(vec3 v, float angle)
 		vec3(+sa, +.0, +ca));
 }
 
-lowp vec3 rotate_x(vec3 v, float angle)
+lowp vec3 rotate_x(lowp vec3 v, lowp float angle)
 {
 	lowp float ca = cos(angle); lowp float sa = sin(angle);
 	return v*mat3(
@@ -37,9 +36,9 @@ lowp vec3 rotate_x(vec3 v, float angle)
 		vec3(+.0, +ca, -sa),
 		vec3(+.0, +sa, +ca));
 }
-lowp float rand(vec2 co) {return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);}//just random function. Used for stars.
+lowp float rand(lowp vec2 co) {return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);}//just random function. Used for stars.
 
-lowp float noise( in vec3 pos )
+lowp float noise( in lowp vec3 pos )
 {
     pos*=0.01;
 	lowp float  z = pos.z*256.0;
@@ -48,7 +47,7 @@ lowp float noise( in vec3 pos )
 	return mix(textureLod( Noise, uv ,0.0).x,textureLod( Noise, uv+offz ,0.0).x,fract(z));
 }
 
-lowp float get_noise(vec3 p, float FBM_FREQ)
+lowp float get_noise(lowp vec3 p, lowp float FBM_FREQ)
 {
 	lowp float
 	t  = 0.51749673 * noise(p); p *= FBM_FREQ;
@@ -58,7 +57,7 @@ lowp float get_noise(vec3 p, float FBM_FREQ)
 	return t;
 }
 
-lowp vec4 draw_night_sky (float attenuation, float sun_amount, vec3 rd, float cld_alpha)
+lowp vec4 draw_night_sky (lowp float attenuation,lowp float sun_amount,lowp vec3 rd, lowp float cld_alpha, lowp float time)
 {
 	lowp vec4 night_sky = vec4(0.0);
 	float moon_amount = min(pow(max(dot(rd, MOON_POS), 0.0), 500.0/moon_radius) * 100.0, 1.0);
@@ -68,7 +67,7 @@ lowp vec4 draw_night_sky (float attenuation, float sun_amount, vec3 rd, float cl
 		if (rand(rd.zx) - rd.y*0.0033> 0.996) //the higher the stars, the fewer they are. Since the spherical panorama does not allow uniform coverage, the pixel density at height is higher.
 			{
 			lowp float stars = rand(rd.zy)*0.5;
-			stars = clamp(sin(iTime*3.0+stars*10.0),0.1,stars);
+			stars = clamp(sin(time*3.0+stars*10.0),0.1,stars);
 			night_sky.rgb = vec3(stars);
 			}
 	moon_amount = clamp(mix (0.0,moon_amount,smoothstep(0.9,1.0,0.75+length(MOON_POS-rd+MOON_PHASE))),0.001,1.0);//here we cast a shadow on the moon. moon phase. 
@@ -91,14 +90,14 @@ void fragment(){
 	{
 	case 0:
 		{	sky = night_color_sky;
-			sky += draw_night_sky(1.0,sun_amount.r,rd,cld.a);
+			sky += draw_night_sky(1.0,sun_amount.r,rd,cld.a,TIME);
 			cld.rgb = mix (cld.rgb, vec3(0.0), 0.99); //darken the clouds, becouse night
 			break;
 		}
 	case 1:
 		{	sky = mix(mix(night_color_sky, sunset_color_horizon, DAY_TIME.y), mix(night_color_sky, sunset_color_sky, DAY_TIME.y),rd.y) + sun_amount;
 			sky.rgb = mix (vec3(0.0), sky.rgb, DAY_TIME.y); //gradually brighten the sky with sunrise
-			sky += draw_night_sky(1.0-DAY_TIME.y,sun_amount.r,rd,cld.a);
+			sky += draw_night_sky(1.0-DAY_TIME.y,sun_amount.r,rd,cld.a,TIME);
 			cld.rgb = mix (vec3(0.0), cld.rgb, DAY_TIME.y); //gradually brighten the clouds with sunrise
 			break;
 		}
@@ -108,7 +107,7 @@ void fragment(){
 	case 5: 
 		{	sky = mix(mix(sunset_color_horizon, night_color_sky, DAY_TIME.y), mix(sunset_color_sky, night_color_sky, DAY_TIME.y),rd.y) + sun_amount;
 			sky.rgb = mix (sky.rgb, vec3(0.0), DAY_TIME.y); //gradually darken the sky with sunset
-			sky += draw_night_sky(DAY_TIME.y,sun_amount.r,rd,cld.a);
+			sky += draw_night_sky(DAY_TIME.y,sun_amount.r,rd,cld.a,TIME);
 			cld.rgb = mix (cld.rgb, vec3(0.0), DAY_TIME.y); //gradually darken the clouds with sunset
 			break;
 		}
