@@ -65,7 +65,7 @@ lowp vec3 draw_night_sky (lowp float sky_amount, lowp vec3 rd, lowp float cld_al
 {
 	lowp vec3 night_sky = vec3(0.0);
 	lowp float moon_amount = min(pow(max(dot(rd, MOON_POS), 0.0), 500.0/moon_radius) * 100.0, 1.0);
-	moon_amount *= smoothstep(0.1,0.99,get_noise(MOON_POS - rd, 3.1415926536));//some noise, if you want
+	moon_amount *= smoothstep(0.05,0.99,get_noise(MOON_POS - rd, 3.1415926536));//some noise, if you want
 	if (sky_amount<0.01 && cld_alpha == 0.0 && moon_amount < 0.01)//If the light from the Sun does not obscure the stars at sunrise/sunset and does not cover the clouds and moon
 		if (rand(rd.zx) - rd.y*0.0033> 0.996) //the higher the stars, the fewer they are. Since the spherical panorama does not allow uniform coverage, the pixel density at height is higher.
 			{
