@@ -2,7 +2,7 @@
 
 [ext_resource path="res://Player.tscn" type="PackedScene" id=1]
 [ext_resource path="res://MovedPlatform.tscn" type="PackedScene" id=2]
-[ext_resource path="res://Sky.tscn" type="PackedScene" id=3]
+[ext_resource path="res://Sky_with_scaterring.tscn" type="PackedScene" id=3]
 [ext_resource path="res://Tree.obj" type="ArrayMesh" id=4]
 
 [sub_resource type="GDScript" id=1]
@@ -43,26 +43,28 @@ extents = Vector3( 1, 1, 2.86814 )
 [node name="TestLevel" type="Spatial"]
 script = SubResource( 1 )
 
-[node name="Sky" parent="." instance=ExtResource( 3 )]
+[node name="Sky_with_scaterring" parent="." instance=ExtResource( 3 )]
 clouds_resolution = 1024
 sky_resolution = 2048
-sun_light = Color( 1, 1, 1, 1 )
+sky_tone = 3.0
+sky_density = 0.75
+sky_rayleig_coeff = 0.75
+sky_mie_coeff = 2.0
+multiScatterPhase = 0.0
+anisotropicIntensity = 0.0
 moon_light = Color( 0.6, 0.6, 0.8, 1 )
 sunset_light = Color( 1, 0.7, 0.55, 1 )
-night_color_sky = Color( 0, 0, 0, 1 )
-sunset_color_horizon = Color( 1, 0.33, 0.12, 1 )
-day_color_sky = Color( 0.07, 0.18, 0.5, 1 )
+day_light = Color( 1, 1, 1, 1 )
 clouds_color = Color( 1, 1, 1, 1 )
-moon_radius = 0.2
+sunset_offset = -0.1
+sunset_range = 0.2
 moon_phase = 0.0
 wind_dir = Vector2( 1, 0 )
 wind_strength = 0.1
-clouds_coverage = 0.3268
-clouds_size = 1.4961
+clouds_size = 2.0
 clouds_softness = 1.0
-hours = 22
-seconds = 49
-time_of_day = 0.937384
+quality = 0.25
+seconds = 0
 
 [node name="LevelGeometry" type="Spatial" parent="."]
 
