@@ -4,7 +4,7 @@ shader_type canvas_item;
 uniform vec3 WIND; //wind_vec*wind_str направление ветра, вектор*силу ветра
 uniform sampler2D Noise;
 
-uniform vec3 MOON_POS; //normalize this vector in script!
+uniform vec3 SUN_POS; //normalize this vector in script!
 
 uniform float clouds_size :hint_range(1.0,10.0); //0.5
 uniform float clouds_softness :hint_range(0.0,1.0); //0.5
@@ -133,7 +133,7 @@ lowp vec4 clouds_2d(lowp vec3 rd, lowp vec3 wind)
 {
 	lowp float CLOUD_LOWER=7000.0;
 	lowp float CLOUD_UPPER=9000.0;
-	lowp float cloudy = COVERAGE -0.5;
+	lowp float cloudy = (1.0-COVERAGE)-0.5;
 	lowp float beg = (((HEIGHT+0.1)*CLOUD_LOWER) / rd.y);
 	lowp float end = (((HEIGHT+0.1)*CLOUD_UPPER) / rd.y);
 	lowp vec3 p = vec3(rd * beg);
@@ -145,7 +145,7 @@ lowp vec4 clouds_2d(lowp vec3 rd, lowp vec3 wind)
 		if (shadeSum.y >= 1.0) break;
 		lowp float h = MapSH(p,cloudy,wind,CLOUD_UPPER);
 		shade.y = max(h, 0.0); 
-        shade.x = clamp(-(h-MapSH(p+MOON_POS*200.0, cloudy,wind,CLOUD_UPPER))*2., 0.05, 1.0);//Тут магия с shadertoy, позиция Луны, потому что освещать облака надо снизу, а Солнце сверху.
+        shade.x = clamp(-(h-MapSH(p+SUN_POS*200.0, cloudy,wind,CLOUD_UPPER))*2., 0.05, 1.0);
 		shadeSum += shade * (1.0 - shadeSum.y);
 		p += add;
 	}
