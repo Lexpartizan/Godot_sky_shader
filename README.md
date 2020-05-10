@@ -24,6 +24,13 @@ The shader and demo scenes target Godot 3.2.
 There is a "version_for_Godot_3_1_2.zip" file which contains a subset of this project's content and works in Godot 3.1. Godrays dont support for Godot 3.1.2.
 # Demo
 
+Attention! After change texture resolution reload scene with sky!
+Now we have two scenes:
+1. Old scene sky_with_simple_colors, where i get sky color from mix simple colors.
+2. New scene sky_with_scaterring, where i get sky color from fake scaterring shader,
+based on https://www.shadertoy.com/view/Ml2cWG
+But with scaterring dificult setup colors for sunset and day sky, so we have two scenes.
+
 The demo scene Sky.tscn showcases some of the abilities of this dynamic sky.
 
 Download the project (explained in the next chapter) and open it via Godot Editor.
@@ -116,10 +123,7 @@ Example on how to set up the shaders in your project if you don't want to use th
 * Stretched sun and moon (see issue #5) (becouse this panorama, but for the moon, you could come up with a solution by projecting it onto the camera screen. But I can't do it :-( )
 * Flickering on the cloud edges (these are noise features that can be significantly reduced by increasing the number of quality_steps, but this affects performance.)
 * A vertical seam on the sphere of the PanoramaSky is visible when the clouds move over it (see issue #2)
-*it often throws an error to the console, but it doesn't interfere with the scene work.
-ERROR: create_from_image: Condition "p_image.is_null()" is true.
-   At: scene/resources/texture.cpp:199
+* it often throws an error to the console, but it doesn't interfere with the scene work.
+ERROR: create_from_image: Condition "p_image.is_null()" is true. At: scene/resources/texture.cpp:199
 Help wanted.
 
-
-Attention! After change texture resolution reload scene with sky!
