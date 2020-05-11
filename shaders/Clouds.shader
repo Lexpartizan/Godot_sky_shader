@@ -6,16 +6,13 @@ uniform sampler2D Noise;
 
 uniform vec3 SUN_POS; //normalize this vector in script!
 
-uniform float clouds_size :hint_range(1.0,10.0); //0.5
-uniform float clouds_softness :hint_range(0.0,1.0); //0.5
+uniform float SIZE :hint_range(0.0,10.0); //0.5
+uniform float SOFTNESS :hint_range(0.0,10.0); //0.5
 uniform float COVERAGE :hint_range(0.0,1.0); //0.5
 uniform float HEIGHT :hint_range(0.0,1.0); //0.0
 uniform float THICKNESS :hint_range(0.0,100.0); //25.
 uniform float ABSORPTION :hint_range(0.0,10.0); //1.030725
 uniform int STEPS :hint_range(0,100); //25
-uniform vec4 sun_color: hint_color;
-uniform vec4 clouds_color: hint_color;
-uniform float moon_radius;
 
 lowp vec3 rotate_y(vec3 v, float angle)
 {
@@ -78,8 +75,8 @@ bool SphereIntersect(lowp vec3 apos, lowp float arad, lowp vec3 ro, lowp vec3 rd
 
 lowp float density(lowp vec3 pos, lowp vec3 offset)
 {
-	lowp vec3 p = pos * 0.02/clouds_size + offset;
-	lowp float dens = get_noise(p,2.0+clouds_softness);
+	lowp vec3 p = pos * 0.02/SIZE + offset;
+	lowp float dens = get_noise(p,2.0+SOFTNESS);
 	dens *= smoothstep (COVERAGE, COVERAGE + .07, dens);
 	return clamp(dens, 0.0, 1.0);	
 }
@@ -149,7 +146,7 @@ lowp vec4 clouds_2d(lowp vec3 rd, lowp vec3 wind)
 		shadeSum += shade * (1.0 - shadeSum.y);
 		p += add;
 	}
-	lowp vec3 clouds = mix(vec3(pow(shadeSum.x, .6)), sun_color.rgb, (1.0-shadeSum.y)*.4);
+	lowp vec3 clouds = mix(vec3(pow(shadeSum.x, .6)), vec3(1.0), (1.0-shadeSum.y)*.4);
     clouds = clamp(mix(vec3(0.0), min(clouds, 1.0), shadeSum.y),0.0,1.0);
 	return vec4(clouds, shadeSum.y);
 }
@@ -159,13 +156,14 @@ void fragment(){
 	uv.x = 2.0 * uv.x - 1.0;
 	uv.y = 2.0 * uv.y - 1.0;
 	lowp vec3 rd = normalize(rotate_y(rotate_x(vec3(0.0, 0.0, 1.0),-uv.y*3.1415926535/2.0),-uv.x*3.1415926535)); //transform UV to spherical panorama 3d coords
+	rd.x*=-1.0; //The x-axis is inverted on the godot scene for unknown reasons
 	lowp vec3 ro = vec3(0.0, -200.0*HEIGHT+40.0, 0.0); //This is the vector of displacement of the sphere relative to zero coordinates. Here you can set the height of the clouds. That is, to make a sphere with clouds higher or lower.
 	lowp vec4 cld = vec4(0.0);
 	lowp float skyPow = dot(rd, vec3(0.0, -1.0, 0.0));
 	lowp float horizonPow =1.-pow(1.0-abs(skyPow), 5.0);
 	if(rd.y>0.0)
 	{
-		if (STEPS < 20) cld = clouds_2d(rd,WIND*TIME); else cld=clouds_3d(ro,rd,WIND*TIME/clouds_size);
+		if (STEPS < 20) cld = clouds_2d(rd,WIND*TIME); else cld=clouds_3d(ro,rd,WIND*TIME/SIZE);
 		cld=clamp(cld,0.0,1.0);
 		cld.rgb+=0.04*cld.rgb*horizonPow;
 		cld*=clamp((  1.0 - exp(-2.3 * pow(max((0.0), horizonPow), (2.6)))),0.,1.);//Here we dissolve the clouds in the horizon for a smooth transition to the horizon line.
@@ -176,6 +174,5 @@ void fragment(){
 	cld.a=1.;
 	cld*=clamp((  1.0 - exp(-1.3 * pow(max((0.0), horizonPow), (2.6)))),0.,1.);
 	}
-	cld*=clouds_color;
 	COLOR = vec4(cld.rgb/(0.0001+cld.a), cld.a);
 }
