@@ -25,6 +25,7 @@ uniform vec4 color_sky: hint_color;
 uniform vec4 moon_tint: hint_color;
 uniform vec4 clouds_tint: hint_color;
 
+varying mat4 cam_matrix;
 
 lowp vec3 rotate_y(lowp vec3 v, lowp float angle)
 {
@@ -53,14 +54,22 @@ lowp vec2 uv_sphere(lowp vec3 rd)
 	return uv;
 }
 
-lowp float draw_moon(lowp vec3 rd)
+lowp float draw_moon_1(lowp vec3 rd)//Мои бесплодные попытки заюзать текстуру Луны
+{
+	lowp vec3 moon_uv = MOON_POS-rd;
+	moon_uv/=moon_radius;
+	moon_uv= (moon_uv*0.5+0.5); 
+	return texture(MOON,moon_uv.xz).r;
+}
+
+lowp float draw_moon(lowp vec3 rd) //чужой код, есть проблемы с движением Луны и контролем её размера.
 {
 	lowp vec3 ord = normalize(rd + 2.0*cross(MOON_TEX_POS, cross(MOON_TEX_POS, rd)));
     lowp vec2 tuv=uv_sphere(ord);
     tuv=(tuv-0.5)/moon_radius+0.5;
 	tuv.x*=2.0;tuv.x-=0.5;
     lowp vec4 tx=texture(MOON,tuv);
-    return tx.r*tx.a;//+min(pow(max(dot(rd, MOON_POS), 0.0), 500.0/moon_radius) * 100.0, 1.0);
+	return tx.r*smoothstep(moon_radius*1.44,moon_radius*1.0,length(MOON_POS-rd));//+min(pow(max(dot(rd, MOON_POS), 0.0), 500.0/moon_radius) * 100.0, 1.0);
 }
 
 lowp vec3 draw_night_sky (lowp float sky_amount, lowp vec3 rd, lowp float cld_alpha, lowp float time)
@@ -111,6 +120,7 @@ lowp vec3 getAtmosphericScattering(lowp vec3 p, lowp vec3 lp){
 }
 
 void fragment(){
+	
 	lowp vec2 uv = UV; 
     uv.x = 2.0 * uv.x - 1.0;
     uv.y = 2.0 * uv.y - 1.0;
