@@ -1,9 +1,10 @@
-[gd_scene load_steps=11 format=2]
+[gd_scene load_steps=12 format=2]
 
 [ext_resource path="res://default_env.tres" type="Environment" id=1]
 [ext_resource path="res://shaders/Sky_with_scaterring.shader" type="Shader" id=2]
 [ext_resource path="res://shaders/noise.png" type="Texture" id=3]
 [ext_resource path="res://shaders/Clouds.shader" type="Shader" id=4]
+[ext_resource path="res://shaders/Moon_1k.png" type="Texture" id=5]
 
 [sub_resource type="GDScript" id=1]
 script/source = "tool
@@ -32,21 +33,21 @@ var iTime: float=0.0
 export (Color, RGBA) var moon_light :Color = Color(0.6,0.6,0.8,1.0)
 export (Color, RGBA) var sunset_light :Color = Color(1.0,0.7,0.55,1.0)
 export (Color, RGBA) var day_light :Color = Color(1.0,1.0,1.0,1.0)
-export (Color, RGBA) var moon_color :Color = Color(0.92,0.55,0.11,1.0)setget set_moon_color
-export (Color, RGBA) var clouds_color :Color = Color(1.0,1.0,1.0,1.0)setget set_clouds_color
+export (Color, RGBA) var moon_tint :Color = Color(1.0,0.7,0.35,1.0) setget set_moon_tint
+export (Color, RGBA) var clouds_tint :Color = Color(1.0,1.0,1.0,1.0) setget set_clouds_tint
 export (float, -0.3,0.3,0.000001) var sunset_offset: float=-0.1
 export (float, 0.0,0.3,0.000001) var sunset_range: float=0.2
 export (float, 0.0,1.0,0.0001) var sun_radius: float = 0.04 setget set_sun_radius#from 0 to 1
-export (float, 0.0,1.0,0.0001) var moon_radius: float = 0.1 setget set_moon_radius#from 0 to 1
-export (float, 0.0,1.0,0.0001) var moon_phase: float =0.0 setget set_moon_phase#from 0 to 1
+export (float, 0.0,0.5,0.0001) var moon_radius: float = 0.1 setget set_moon_radius#from 0 to 0.5
+export (float, -1.0,1.0,0.0001) var moon_phase: float =0.0 setget set_moon_phase#from 0 to 1
 export var night_level_light: float=0.05 setget set_night_level_light
 var lighting_pos: Vector3=Vector3(0.0,1.0,1.0)
 var lighting_strike: bool = false setget set_lighting_strike
 export var wind_dir: Vector2=Vector2(1.0,0.0) setget set_wind_dir
 export (float, 0.0,1.0,0.0001) var wind_strength: float = 0.1 setget set_wind_strength#from 0 to 1
 export (float, 0.0,1.0,0.0001) var clouds_coverage: float = 0.5 setget set_clouds_coverage#from 0 to 1
-export (float, 1.0,10.0,0.0001) var clouds_size: float = 2.0 setget set_clouds_size#from 1 to 10
-export (float, 0.0,1.0,0.0001) var clouds_softness: float = 1.0 setget set_clouds_softness#from 0 to 1
+export (float, 0.0,10.0,0.0001) var clouds_size: float = 2.0 setget set_clouds_size#from 0 to 10
+export (float, 0.0,10.0,0.0001) var clouds_softness: float = 1.0 setget set_clouds_softness#from 0 to 1
 export (float, 0.0,1.0,0.0001) var clouds_height: float = 0.35 setget set_clouds_height#from 0 to 1
 export (float, 0.0,1.0,0.0001) var quality: float = 0.25 setget set_quality#from 0 to 1
 export (int, 0, 23) var hours: int=0 setget set_hours
@@ -79,7 +80,8 @@ func _ready():
 	call_deferred(\"_set_light_size\",0.3)
 	env.background_sky.set_panorama(sky_view.get_texture())
 	call_deferred(\"set_color_sky\",color_sky)
-		
+	call_deferred(\"set_moon_tint\",moon_tint)
+	call_deferred(\"set_clouds_tint\",clouds_tint)
 	call_deferred(\"set_moon_phase\",moon_phase)
 	call_deferred(\"set_moon_radius\",moon_radius)
 	call_deferred(\"set_wind_strength\",wind_strength)
@@ -116,7 +118,7 @@ func set_time_of_day(value):
 	minutes = int(clamp(time/60,0.0,59.0))
 	time -= minutes*60
 	seconds = int(clamp(time,0.0,59.0))
-	print (hours,\":\",minutes,\":\",seconds)
+	#print (hours,\":\",minutes,\":\",seconds)
 	set_time()
 
 func set_time():
@@ -125,15 +127,17 @@ func set_time():
 	var light_color :Color = Color(1.0,1.0,1.0,1.0)
 	var phi = time_of_day*2.0*PI
 	sun_pos = Vector3(0.0,-1.0,0.0).normalized().rotated(Vector3(0.0,0.0,1.0).normalized(),phi) #here you can change the start position of the Sun and axis of rotation
-	moon_pos = Vector3(0.0,1.0,0.0).normalized().rotated(Vector3(1.0,0.0,0.0).normalized(),phi) #Same for Moon
+	moon_pos = Vector3(0.0,1.0,0.0).normalized().rotated(Vector3(0.0,0.0,1.0).normalized(),phi) #Same for Moon
+	var moon_tex_pos = Vector3(0.0,1.0,0.0).normalized().rotated(Vector3(0.0,0.0,1.0).normalized(),(phi+PI)*0.5) #Same for Moon
+	
+	call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/MOON_TEX_POS\",moon_tex_pos)
 	var light_energy = smoothstep(sunset_offset,0.4,sun_pos.y);# light intensity depending on the height of the sun
 	call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/SUN_POS\",sun_pos)
 	call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/MOON_POS\",moon_pos)
 	call_deferred(\"set_call_deff_shader_params\", clouds_tex.material, \"shader_param/SUN_POS\",-sun_pos)
 	call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/attenuation\",clamp(light_energy,night_level_light*0.25,1.00))#clouds to bright with night_level_light
 	light_energy = clamp(light_energy,night_level_light,1.00);
-	sun_pos.x *= -1 # The x-axis is inverted on the stage for unknown reasons, so we have fixed this for light source
-	moon_pos.x *= -1
+	
 	var sun_height =sun_pos.y-sunset_offset
 	if sun_height < sunset_range:
 		light_color=lerp(moon_light, sunset_light, clamp(sun_height/sunset_range,0.0,1.0))
@@ -145,6 +149,7 @@ func set_time():
 	else:
 		if sun_pos.normalized() != Vector3.UP:
 			sun.look_at_from_position(sun_pos,Vector3.ZERO,Vector3.UP); # move sun to position and look at center scene from position
+	set_clouds_tint(light_color) # comment this, if you need custom clouds tint
 	light_energy = light_energy *(1-clouds_coverage*0.5)
 	sun.light_energy = light_energy
 	sun.light_color = light_color
@@ -181,14 +186,14 @@ func set_clouds_coverage(value):
 		call_deferred(\"set_time\")
 
 func set_clouds_size(value):
-	clouds_size = clamp(value,1.0,10.0)
+	clouds_size = clamp(value,0.0,10.0)
 	if clouds_tex:
-		call_deferred(\"set_call_deff_shader_params\", clouds_tex.material, \"shader_param/clouds_size\",clouds_size)
+		call_deferred(\"set_call_deff_shader_params\", clouds_tex.material, \"shader_param/SIZE\",clouds_size)
 
 func set_clouds_softness(value):
-	clouds_softness = clamp(value,0.0,1.0)
+	clouds_softness = clamp(value,0.0,10.0)
 	if clouds_tex:
-		call_deferred(\"set_call_deff_shader_params\", clouds_tex.material, \"shader_param/clouds_softness\",clouds_softness)
+		call_deferred(\"set_call_deff_shader_params\", clouds_tex.material, \"shader_param/SOFTNESS\",clouds_softness)
 
 func set_quality(value):
 	quality = value
@@ -202,7 +207,7 @@ func set_wind_dir(value):
 func set_wind_strength(value):
 	wind_strength = value
 	if clouds_tex:
-		call_deferred(\"set_call_deff_shader_params\", clouds_tex.material, \"shader_param/WIND\",Vector3(-wind_dir.x,0.0,wind_dir.y)*wind_strength) #The x-axis is inverted on the stage for unknown reasons, so we have fixed this for light source
+		call_deferred(\"set_call_deff_shader_params\", clouds_tex.material, \"shader_param/WIND\",Vector3(wind_dir.x,0.0,wind_dir.y)*wind_strength)
 	
 func set_sun_radius(value):
 	sun_radius = clamp(value,0.0,1.0)
@@ -215,9 +220,9 @@ func set_moon_radius(value):
 		call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/moon_radius\",value)
 	
 func set_moon_phase(value):
-	moon_phase = clamp(value,0.0,1.0)
+	moon_phase = clamp(value,-1.0,1.0)
 	if sky_tex:
-		call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/MOON_PHASE\",moon_phase*0.4-0.2) # convert to diapazon -0.2...+0.2
+		call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/MOON_PHASE\",moon_phase)#*0.4-0.2) # convert to diapazon -0.2...+0.2
 
 func set_sky_tone(value):
 	sky_tone = value
@@ -254,15 +259,15 @@ func set_color_sky(value):
 	if sky_tex:
 		call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/color_sky\",color_sky)
 
-func set_moon_color(value):
-	moon_color = value
+func set_moon_tint(value):
+	moon_tint = value
 	if sky_tex:
-		call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/moon_color\",moon_color)
+		call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/moon_tint\",moon_tint)
 
-func set_clouds_color(value):
-	clouds_color = value
+func set_clouds_tint(value):
+	clouds_tint = value
 	if clouds_tex:
-		call_deferred(\"set_call_deff_shader_params\", clouds_tex.material, \"shader_param/clouds_color\",clouds_color)
+		call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/clouds_tint\",clouds_tint)
 
 func _process(delta):
 	if (lighting_strike):
@@ -271,7 +276,7 @@ func _process(delta):
 		lighting_pos = lighting_pos.normalized()
 		sun.light_color = day_light
 		sun.light_energy = lighting_stength*2
-		call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/LIGHTTING_POS\",Vector3(-lighting_pos.x,lighting_pos.y,lighting_pos.z))
+		call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/LIGHTTING_POS\",lighting_pos)
 		call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/LIGHTING_STRENGTH\",Vector3(lighting_stength,lighting_stength,lighting_stength))
 		lighting_pos.x *= -1
 		sun.look_at_from_position(lighting_pos,Vector3.ZERO,Vector3.UP);
@@ -304,18 +309,15 @@ func set_god_rays(button_pressed):
 [sub_resource type="ShaderMaterial" id=2]
 resource_local_to_scene = true
 shader = ExtResource( 4 )
-shader_param/WIND = Vector3( -0.1, 0, 0 )
-shader_param/SUN_POS = Vector3( 0, 1, 0 )
-shader_param/clouds_size = 2.0
-shader_param/clouds_softness = 1.0
+shader_param/WIND = Vector3( 0.1, 0, 0 )
+shader_param/SUN_POS = Vector3( -0.999048, 0.0436187, 0 )
+shader_param/SIZE = 2.0
+shader_param/SOFTNESS = 1.0
 shader_param/COVERAGE = 0.5
 shader_param/HEIGHT = 0.35
 shader_param/THICKNESS = 15.0
 shader_param/ABSORPTION = 1.25
-shader_param/STEPS = 25
-shader_param/sun_color = Color( 1, 0.705882, 0.54902, 1 )
-shader_param/clouds_color = Color( 1, 1, 1, 1 )
-shader_param/moon_radius = 0.07
+shader_param/STEPS = 100
 shader_param/Noise = ExtResource( 3 )
 
 [sub_resource type="ImageTexture" id=3]
@@ -330,12 +332,13 @@ viewport_path = NodePath("clouds_viewport")
 [sub_resource type="ShaderMaterial" id=5]
 resource_local_to_scene = true
 shader = ExtResource( 2 )
-shader_param/SUN_POS = Vector3( 0, -1, 0 )
-shader_param/MOON_POS = Vector3( 0, 1, 0 )
-shader_param/MOON_PHASE = -0.2
-shader_param/moon_radius = 0.1
-shader_param/sun_radius = 0.04
-shader_param/attenuation = 0.0125
+shader_param/SUN_POS = Vector3( 0.999048, -0.0436187, 0 )
+shader_param/MOON_POS = Vector3( -0.999048, 0.0436187, 0 )
+shader_param/MOON_TEX_POS = Vector3( -0.722364, -0.691513, 0 )
+shader_param/MOON_PHASE = -1.0
+shader_param/moon_radius = 0.05
+shader_param/sun_radius = 0.05
+shader_param/attenuation = 0.0352785
 shader_param/LIGHTING_STRENGTH = Vector3( 0.1, 0.1, 0.1 )
 shader_param/LIGHTTING_POS = Vector3( 0, 0.707107, 0.707107 )
 shader_param/sky_tone = 3.0
@@ -345,8 +348,9 @@ shader_param/sky_mie_coeff = 2.0
 shader_param/multiScatterPhase = 0.1
 shader_param/anisotropicIntensity = 0.0
 shader_param/color_sky = Color( 0.25098, 0.501961, 1, 1 )
-shader_param/moon_color = Color( 0.74902, 0.470588, 0.168627, 1 )
-shader_param/Noise = ExtResource( 3 )
+shader_param/moon_tint = Color( 1, 0.7, 0.35, 1 )
+shader_param/clouds_tint = Color( 0.712763, 0.628191, 0.729523, 1 )
+shader_param/MOON = ExtResource( 5 )
 shader_param/cloud_env_texture = SubResource( 4 )
 
 [sub_resource type="ImageTexture" id=6]
@@ -359,19 +363,24 @@ size = Vector2( 2048, 2048 )
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.837814, 0, 0 )
 script = SubResource( 1 )
 color_sky = Color( 0.25098, 0.501961, 1, 1 )
-moon_color = Color( 0.74902, 0.470588, 0.168627, 1 )
-sun_radius = 0.04
-moon_radius = 0.1
-night_level_light = 0.05
+clouds_tint = Color( 0.712763, 0.628191, 0.729523, 1 )
+sun_radius = 0.05
+moon_radius = 0.05
+moon_phase = -1.0
+night_level_light = 0.1
 clouds_height = 0.35
+quality = 1.0
+hours = 7
+minutes = 50
+time_of_day_setup = 0.326389
 
 [node name="Env" type="WorldEnvironment" parent="."]
 environment = ExtResource( 1 )
 
 [node name="Sun_Moon" type="DirectionalLight" parent="."]
-transform = Transform( -0.98252, 0.173687, -0.0669872, 0, 0.359843, 0.933011, 0.186157, 0.916703, -0.353553, 0.770827, 0.933013, -0.353554 )
-light_color = Color( 0.6, 0.6, 0.8, 1 )
-light_energy = 0.0375
+transform = Transform( -4.37114e-08, 0.0436187, -0.999043, 0, 0.999048, 0.0436185, 1, 1.90664e-09, -4.36696e-08, -0.161234, 0.0436187, 0 )
+light_color = Color( 0.712763, 0.628191, 0.729523, 1 )
+light_energy = 0.075
 shadow_enabled = true
 shadow_color = Color( 0.3, 0.3, 0.3, 1 )
 directional_shadow_depth_range = 1
