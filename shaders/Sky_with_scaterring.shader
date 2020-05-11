@@ -54,7 +54,7 @@ lowp vec2 uv_sphere(lowp vec3 rd)
 	return uv;
 }
 
-lowp float draw_moon_1(lowp vec3 rd)//Мои бесплодные попытки заюзать текстуру Луны
+lowp float draw_moon_1(lowp vec3 rd)//My failed attempts to use the moon texture
 {
 	lowp vec3 moon_uv = MOON_POS-rd;
 	moon_uv/=moon_radius;
@@ -62,7 +62,7 @@ lowp float draw_moon_1(lowp vec3 rd)//Мои бесплодные попытки
 	return texture(MOON,moon_uv.xz).r;
 }
 
-lowp float draw_moon(lowp vec3 rd) //чужой код, есть проблемы с движением Луны и контролем её размера.
+lowp float draw_moon(lowp vec3 rd) //someone else's code, there are problems with the movement of the moon on y
 {
 	lowp vec3 ord = normalize(rd + 2.0*cross(MOON_TEX_POS, cross(MOON_TEX_POS, rd)));
     lowp vec2 tuv=uv_sphere(ord);
