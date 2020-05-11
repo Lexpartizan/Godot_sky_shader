@@ -44,7 +44,28 @@ extents = Vector3( 1, 1, 2.86814 )
 script = SubResource( 1 )
 
 [node name="Sky_with_scaterring" parent="." instance=ExtResource( 3 )]
+clouds_resolution = 1024
+sky_resolution = 2048
+sky_tone = 3.0
+sky_density = 0.75
+sky_rayleig_coeff = 0.75
+sky_mie_coeff = 2.0
+multiScatterPhase = 0.0
+anisotropicIntensity = 0.0
+moon_light = Color( 0.6, 0.6, 0.8, 1 )
+sunset_light = Color( 1, 0.7, 0.55, 1 )
+day_light = Color( 1, 1, 1, 1 )
+moon_tint = Color( 1, 0.7, 0.35, 1 )
 clouds_tint = Color( 0.712763, 0.628191, 0.729523, 1 )
+sunset_offset = -0.1
+sunset_range = 0.2
+moon_radius = 0.5
+wind_dir = Vector2( 1, 0 )
+wind_strength = 0.1
+clouds_coverage = 0.5
+clouds_size = 2.0
+clouds_softness = 1.0
+seconds = 0
 
 [node name="LevelGeometry" type="Spatial" parent="."]
 
