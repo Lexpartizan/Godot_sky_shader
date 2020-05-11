@@ -1,10 +1,13 @@
 shader_type canvas_item;
 // USING Non physical based atmospheric scattering made by robobo1221 https://www.shadertoy.com/view/Ml2cWG
-uniform sampler2D Noise;
+uniform sampler2D MOON;
+uniform sampler2D cloud_env_texture;
+
 uniform vec3 SUN_POS; //normalize this vector in script!
-uniform vec3 MOON_POS; //normalize this vector in script!
-uniform float MOON_PHASE:hint_range(-0.2,0.2);
-uniform float moon_radius:hint_range(0.0,1.0);
+uniform vec3 MOON_POS; //normalize this vector in script
+uniform vec3 MOON_TEX_POS; //normalize this vector in script!!
+uniform float MOON_PHASE:hint_range(-1.0,1.0);
+uniform float moon_radius:hint_range(0.0,0.5);
 uniform float sun_radius:hint_range(0.0,0.3);
 uniform float attenuation:hint_range(0.0,1.0);
 
@@ -19,9 +22,9 @@ uniform float multiScatterPhase: hint_range(0.0,2.0);
 uniform float anisotropicIntensity: hint_range(-2.0,2.0);
 
 uniform vec4 color_sky: hint_color;
-uniform vec4 moon_color: hint_color;
+uniform vec4 moon_tint: hint_color;
+uniform vec4 clouds_tint: hint_color;
 
-uniform sampler2D cloud_env_texture;
 
 lowp vec3 rotate_y(lowp vec3 v, lowp float angle)
 {
@@ -42,30 +45,28 @@ lowp vec3 rotate_x(lowp vec3 v, lowp float angle)
 }
 lowp float rand(lowp vec2 co) {return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);}//just random function. Used for stars.
 
-lowp float noise( in lowp vec3 pos )
+lowp vec2 uv_sphere(lowp vec3 rd)
 {
-    pos*=0.01;
-	lowp float  z = pos.z*256.0;
-	lowp vec2 offz = vec2(0.317,0.123);
-	lowp vec2 uv = pos.xy + offz*floor(z); 
-	return mix(textureLod( Noise, uv ,0.0).x,textureLod( Noise, uv+offz ,0.0).x,fract(z));
+	vec2 uv =vec2(atan(rd.x,rd.y),acos(rd.z));
+	if (uv.x<0.0) uv.x+=3.1415926536*2.0;
+	uv /= vec2(3.1415926536*2.0, 3.1415926536);
+	return uv;
 }
 
-lowp float get_noise(lowp vec3 p, lowp float FBM_FREQ)
+lowp float draw_moon(lowp vec3 rd)
 {
-	lowp float
-	t  = 0.51749673 * noise(p); p *= FBM_FREQ;
-	t += 0.25584929 * noise(p); p *= FBM_FREQ;
-	t += 0.12527603 * noise(p); p *= FBM_FREQ;
-	t += 0.06255931 * noise(p);
-	return t;
+	lowp vec3 ord = normalize(rd + 2.0*cross(MOON_TEX_POS, cross(MOON_TEX_POS, rd)));
+    lowp vec2 tuv=uv_sphere(ord);
+    tuv=(tuv-0.5)/moon_radius+0.5;
+	tuv.x*=2.0;tuv.x-=0.5;
+    lowp vec4 tx=texture(MOON,tuv);
+    return tx.r*tx.a;//+min(pow(max(dot(rd, MOON_POS), 0.0), 500.0/moon_radius) * 100.0, 1.0);
 }
 
 lowp vec3 draw_night_sky (lowp float sky_amount, lowp vec3 rd, lowp float cld_alpha, lowp float time)
 {
 	lowp vec3 night_sky = vec3(0.0);
-	lowp float moon_amount = min(pow(max(dot(rd, MOON_POS), 0.0), 500.0/moon_radius) * 100.0, 1.0);
-	moon_amount *= smoothstep(0.05,0.99,get_noise(MOON_POS - rd, 3.1415926536));//some noise, if you want
+	float moon_amount = draw_moon(rd);
 	if (sky_amount<0.01 && cld_alpha == 0.0 && moon_amount < 0.01)//If the light from the Sun does not obscure the stars at sunrise/sunset and does not cover the clouds and moon
 		if (rand(rd.zx) - rd.y*0.0033> 0.996) //the higher the stars, the fewer they are. Since the spherical panorama does not allow uniform coverage, the pixel density at height is higher.
 			{
@@ -74,8 +75,8 @@ lowp vec3 draw_night_sky (lowp float sky_amount, lowp vec3 rd, lowp float cld_al
 			night_sky.rgb = vec3(stars);
 			}
 	moon_amount*=1.0 - attenuation; //attenuation of the brightness of the moon (for sunrise and sunset).
-	moon_amount = clamp(mix (0.0,moon_amount,smoothstep(0.9,1.0,0.75+length(MOON_POS-rd+MOON_PHASE))),0.001,1.0);//here we cast a shadow on the moon. moon phase. 
-	night_sky.rgb += moon_color.rgb*moon_amount*(clamp(1.0-cld_alpha-0.2,0.0,1.0));//Here we mix with the clouds so that there is no black border. But so that the Moon does not Shine through the clouds.
+	moon_amount = clamp(mix (0.0,moon_amount,smoothstep(0.9,1.0,(1.0-moon_radius)*0.5+length(MOON_POS-rd+MOON_PHASE)*(1.0-moon_radius*0.75))),0.001,1.0);//here we cast a shadow on the moon. moon phase. 
+	night_sky += moon_tint.rgb*moon_amount*(clamp(1.0-cld_alpha-0.2,0.0,1.0));//Here we mix with the clouds so that there is no black border. But so that the Moon does not Shine through the clouds.
 	return night_sky;
 }
 
@@ -114,8 +115,10 @@ void fragment(){
     uv.x = 2.0 * uv.x - 1.0;
     uv.y = 2.0 * uv.y - 1.0;
 	lowp vec3 rd = normalize(rotate_y(rotate_x(vec3(0.0, 0.0, 1.0),-uv.y*3.1415926535/2.0),-uv.x*3.1415926535)); //transform UV to spherical panorama 3d coords
+	rd.x*=-1.0; ////The x-axis is inverted on the godot scene for unknown reasons
 	lowp vec4 cld = texture(cloud_env_texture, SCREEN_UV);
 	cld.rgb *=attenuation; //lighten the clouds depending on the height of the Sun, calculated in the script
+	cld*=clouds_tint;
 	lowp vec3 sky;
 	sky = getAtmosphericScattering(rd,SUN_POS);
 	sky += draw_night_sky(max(max(sky.b,sky.r),sky.g),rd,cld.a,TIME) ;
@@ -125,7 +128,6 @@ void fragment(){
 		lowp vec3 lighting_amount = LIGHTING_STRENGTH * min(pow(max(dot(rd,LIGHTTING_POS), 0.0), 100.0) * 1.0, 1.0); // you don't need to light up the clouds. I just wanted to make the place where the lightning flashed a little bit visible and highlight the clouds there. This is a rather dubious decision.
 		cld.rgb = mix(cld.rgb,lighting_amount, .5);
 	}
-	sky.rgb = mix(sky.rgb, cld.rgb/(0.0001+cld.a), cld.a);
 	sky = mix(sky, cld.rgb/(0.0001+cld.a), cld.a);
 	COLOR=vec4(sky,1.0);
 }
