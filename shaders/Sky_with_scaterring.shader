@@ -2,6 +2,7 @@ shader_type canvas_item;
 // USING Non physical based atmospheric scattering made by robobo1221 https://www.shadertoy.com/view/Ml2cWG
 uniform sampler2D MOON;
 uniform sampler2D cloud_env_texture;
+uniform sampler2D lighting_texture;
 
 uniform vec3 SUN_POS; //normalize this vector in script!
 uniform vec3 MOON_POS; //normalize this vector in script
@@ -65,11 +66,11 @@ lowp float draw_moon_1(lowp vec3 rd)//My failed attempts to use the moon texture
 lowp float draw_moon(lowp vec3 rd) //someone else's code, there are problems with the movement of the moon on y
 {
 	lowp vec3 ord = normalize(rd + 2.0*cross(MOON_TEX_POS, cross(MOON_TEX_POS, rd)));
-    lowp vec2 tuv=uv_sphere(ord);
-    tuv=(tuv-0.5)/moon_radius+0.5;
-	tuv.x*=2.0;tuv.x-=0.5;
-    lowp vec4 tx=texture(MOON,tuv);
-	return tx.r*smoothstep(moon_radius*1.44,moon_radius*1.0,length(MOON_POS-rd));//+min(pow(max(dot(rd, MOON_POS), 0.0), 500.0/moon_radius) * 100.0, 1.0);
+    lowp vec2 uv=uv_sphere(ord);
+    uv=(uv-0.5)/moon_radius+0.5;
+	uv.x*=2.0;uv.x-=0.5;
+	lowp float alpha =smoothstep(moon_radius*1.44,moon_radius*1.0,length(MOON_POS-rd));
+    return texture(MOON,uv).r*alpha+min(pow(max(dot(rd, MOON_POS), 0.0), 500.0/moon_radius) * 100.0, 1.0);
 }
 
 lowp vec3 draw_night_sky (lowp float sky_amount, lowp vec3 rd, lowp float cld_alpha, lowp float time)
@@ -92,18 +93,10 @@ lowp vec3 draw_night_sky (lowp float sky_amount, lowp vec3 rd, lowp float cld_al
 lowp vec3 getSkyAbsorption(lowp vec3 color, lowp float h){return exp2(color * -h) * 2.0;}
 lowp float horizon_limiter (lowp float h){return clamp(abs(h),0.1+smoothstep(0.0,0.3,SUN_POS.y)*0.2,1.0);}// eliminate the dark line and other artefacts on the horizon with clamp
 lowp float zenithDensity(lowp float dens){return sky_density/pow(max(dens, 0.0), 0.75);}
-lowp float getSunPoint(lowp vec3 p, lowp vec3 lp) {return smoothstep(sun_radius, sun_radius*0.9, distance(p, lp)) * 5.0;}
+lowp float getSunPoint(lowp vec3 p, lowp vec3 lp) {return min(pow(max(dot(p,lp), 0.0), 100.0/sun_radius) * 100.0, 2.0);}//return smoothstep(sun_radius, sun_radius*0.5, distance(p, lp)) * 10.0;
 lowp float getRayleigMultiplier(lowp vec3 p, lowp vec3 lp){return sky_rayleig_coeff + pow(1.0 - clamp(distance(p, lp), 0.0, 1.0), 2.0) * 3.14159265359 * 0.5;}
-lowp float getMie(lowp vec3 p, lowp vec3 lp)
-{
-	lowp float disk = clamp(1.0 - pow(distance(p, lp), 0.1), 0.0, 1.0);
-	return disk*disk*(3.0 - 2.0 * disk) * sky_mie_coeff * 3.14159265359;
-}
-lowp vec3 jodieReinhardTonemap(lowp vec3 color)
-{	
-	lowp vec3 tc = color / (color + 1.0);
-	return mix(color / (dot(color, vec3(0.2126, 0.7152, 0.0722)) + 1.0), tc, tc);
-}
+lowp float getMie(lowp vec3 p, lowp vec3 lp) { lowp float disk = clamp(1.0 - pow(distance(p, lp), 0.1), 0.0, 1.0); return disk*disk*(3.0 - 2.0 * disk) * sky_mie_coeff * 3.14159265359;}
+lowp vec3 jodieReinhardTonemap(lowp vec3 color){ lowp vec3 tc = color / (color + 1.0); return mix(color / (dot(color, vec3(0.2126, 0.7152, 0.0722)) + 1.0), tc, tc);}
 
 lowp vec3 getAtmosphericScattering(lowp vec3 p, lowp vec3 lp){
 	lowp vec3 skyColor = color_sky.rgb * (1.0 + anisotropicIntensity);
@@ -120,23 +113,24 @@ lowp vec3 getAtmosphericScattering(lowp vec3 p, lowp vec3 lp){
 }
 
 void fragment(){
-	
 	lowp vec2 uv = UV; 
     uv.x = 2.0 * uv.x - 1.0;
     uv.y = 2.0 * uv.y - 1.0;
 	lowp vec3 rd = normalize(rotate_y(rotate_x(vec3(0.0, 0.0, 1.0),-uv.y*3.1415926535/2.0),-uv.x*3.1415926535)); //transform UV to spherical panorama 3d coords
 	rd.x*=-1.0; ////The x-axis is inverted on the godot scene for unknown reasons
-	lowp vec4 cld = texture(cloud_env_texture, SCREEN_UV);
+		
+	lowp vec4 cld = texture(cloud_env_texture, 1.0-UV);//The axis is inverted on the godot scene for unknown reasons,so gor godrays inverted them!
 	cld.rgb *=attenuation; //lighten the clouds depending on the height of the Sun, calculated in the script
 	cld*=clouds_tint;
 	lowp vec3 sky;
 	sky = getAtmosphericScattering(rd,SUN_POS);
-	sky += draw_night_sky(max(max(sky.b,sky.r),sky.g),rd,cld.a,TIME) ;
-	if (LIGHTING_STRENGTH.r >0.1)
+	sky += draw_night_sky(max(max(sky.b,sky.r),sky.g),rd,cld.a,TIME);
+	if (LIGHTING_STRENGTH.r >0.01)
 	{
-		sky = mix (sky.rgb, LIGHTING_STRENGTH,0.8); //flash of light in the sky simulates a lightning strike
-		lowp vec3 lighting_amount = LIGHTING_STRENGTH * min(pow(max(dot(rd,LIGHTTING_POS), 0.0), 100.0) * 1.0, 1.0); // you don't need to light up the clouds. I just wanted to make the place where the lightning flashed a little bit visible and highlight the clouds there. This is a rather dubious decision.
-		cld.rgb = mix(cld.rgb,lighting_amount, .5);
+		lowp float lighting_amount = LIGHTING_STRENGTH.r*min(pow(max(dot(rd,LIGHTTING_POS), 0.0), 100.0) * 1.0, 1.0); // you don't need to light up the clouds. I just wanted to make the place where the lightning flashed a little bit visible and highlight the clouds there. This is a rather dubious decision.
+		lowp float lighting =texture(lighting_texture,UV).r*lighting_amount;
+		sky = mix (sky.rgb, LIGHTING_STRENGTH,0.5) + lighting; //flash of light in the sky simulates a lightning strike
+		cld.rgb = mix(cld.rgb,vec3 (lighting_amount), 0.2)+lighting;
 	}
 	sky = mix(sky, cld.rgb/(0.0001+cld.a), cld.a);
 	COLOR=vec4(sky,1.0);
