@@ -28,7 +28,7 @@ window/size/always_on_top=true
 
 [editor_plugins]
 
-enabled=PoolStringArray(  )
+enabled=PoolStringArray( "SIsilicon.vfx.godrays" )
 
 [input]
 
