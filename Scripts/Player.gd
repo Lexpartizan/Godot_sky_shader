@@ -35,18 +35,18 @@ var old_angle_model:float = 0.0
 
 var GUI_management: bool = false;
 func _ready():
-	#Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED) 
+	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED) 
 	pass
 
 func _input(event):
 	# Player actions processing
-	if Input.is_action_just_pressed("gui_management"):
-		GUI_management = !GUI_management
-	if GUI_management:
-		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE) 
-		return
-	else:
-		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED) 
+	#if Input.is_action_just_pressed("gui_management"):
+	#	GUI_management = !GUI_management
+	#if GUI_management:
+	#	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE) 
+	#	return
+	#else:
+	#	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED) 
 	
 	var temp: Vector2 = Vector2()
 	temp = move_dir #Эта переменная нужна, чтобы узнать, изменились ли нажатия клавиш (стрелки)
