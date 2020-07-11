@@ -47,30 +47,30 @@ lowp vec3 rotate_x(lowp vec3 v, lowp float angle)
 }
 lowp float rand(lowp vec2 co) {return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);}//just random function. Used for stars.
 
-lowp vec2 uv_sphere(lowp vec3 rd)
+lowp vec2 uv_sphere(lowp vec3 rd, lowp vec3 pos, lowp float scale) //someone else's code, there are problems with the movement of the moon on y-axis
 {
-	vec2 uv =vec2(atan(rd.x,rd.y),acos(rd.z));
+	lowp vec3 ord = normalize(rd + 2.0*cross(pos, cross(pos, rd)));
+	
+	vec2 uv =vec2(atan(ord.x,ord.y),acos(ord.z));
 	if (uv.x<0.0) uv.x+=3.1415926536*2.0;
 	uv /= vec2(3.1415926536*2.0, 3.1415926536);
+	
+	uv=(uv-0.5)/scale+0.5;
+	uv.x*=2.0;uv.x-=0.5;
 	return uv;
 }
 
-lowp float draw_moon_1(lowp vec3 rd)//My failed attempts to use the moon texture
+lowp float draw_moon(lowp vec3 rd) 
 {
-	lowp vec3 moon_uv = MOON_POS-rd;
-	moon_uv/=moon_radius;
-	moon_uv= (moon_uv*0.5+0.5); 
-	return texture(MOON,moon_uv.xz).r;
+	lowp vec2 uv=uv_sphere(rd,MOON_TEX_POS,moon_radius);
+    lowp float alpha =smoothstep(moon_radius*1.44,moon_radius*1.0,length(MOON_POS-rd));
+    return texture(MOON,uv).r*alpha;//+min(pow(max(dot(rd, MOON_POS), 0.0), 500.0/moon_radius) * 100.0, 1.0);
 }
 
-lowp float draw_moon(lowp vec3 rd) //someone else's code, there are problems with the movement of the moon on y
+lowp float draw_lighting(lowp vec3 rd) 
 {
-	lowp vec3 ord = normalize(rd + 2.0*cross(MOON_TEX_POS, cross(MOON_TEX_POS, rd)));
-    lowp vec2 uv=uv_sphere(ord);
-    uv=(uv-0.5)/moon_radius+0.5;
-	uv.x*=2.0;uv.x-=0.5;
-	lowp float alpha =smoothstep(moon_radius*1.44,moon_radius*1.0,length(MOON_POS-rd));
-    return texture(MOON,uv).r*alpha+min(pow(max(dot(rd, MOON_POS), 0.0), 500.0/moon_radius) * 100.0, 1.0);
+	lowp vec2 uv = uv_sphere(rd,LIGHTTING_POS,0.2);
+	return texture(lighting_texture,uv).r;
 }
 
 lowp vec3 draw_night_sky (lowp float sky_amount, lowp vec3 rd, lowp float cld_alpha, lowp float time)
@@ -125,13 +125,10 @@ void fragment(){
 	lowp vec3 sky;
 	sky = getAtmosphericScattering(rd,SUN_POS);
 	sky += draw_night_sky(max(max(sky.b,sky.r),sky.g),rd,cld.a,TIME);
-	if (LIGHTING_STRENGTH.r >0.01)
-	{
-		lowp float lighting_amount = LIGHTING_STRENGTH.r*min(pow(max(dot(rd,LIGHTTING_POS), 0.0), 100.0) * 1.0, 1.0); // you don't need to light up the clouds. I just wanted to make the place where the lightning flashed a little bit visible and highlight the clouds there. This is a rather dubious decision.
-		lowp float lighting =texture(lighting_texture,UV).r*lighting_amount;
-		sky = mix (sky.rgb, LIGHTING_STRENGTH,0.5) + lighting; //flash of light in the sky simulates a lightning strike
-		cld.rgb = mix(cld.rgb,vec3 (lighting_amount), 0.2)+lighting;
-	}
+	lowp float lighting = draw_lighting(rd)*LIGHTING_STRENGTH.r;
+	sky = mix (sky.rgb, LIGHTING_STRENGTH,0.5) + lighting; //flash of light in the sky simulates a lightning strike
+	cld.rgb += lighting;
+	
 	sky = mix(sky, cld.rgb/(0.0001+cld.a), cld.a);
 	COLOR=vec4(sky,1.0);
 }
