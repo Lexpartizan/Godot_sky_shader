@@ -67,6 +67,7 @@ lowp float draw_moon(lowp vec3 rd)
     return texture(MOON,uv).r*alpha;//+min(pow(max(dot(rd, MOON_POS), 0.0), 500.0/moon_radius) * 100.0, 1.0);
 }
 
+
 lowp vec3 draw_night_sky (lowp float sky_amount, lowp vec3 rd, lowp float cld_alpha, lowp float time)
 {
 	lowp vec3 night_sky = vec3(0.0);
@@ -107,9 +108,9 @@ lowp vec3 getAtmosphericScattering(lowp vec3 p, lowp vec3 lp){
 }
 
 void fragment(){
-	lowp vec2 uv = UV;
-	uv.x = 2.0 * uv.x - 1.0;
-	uv.y = 2.0 * uv.y - 1.0;
+	lowp vec2 uv = UV; 
+    uv.x = 2.0 * uv.x - 1.0;
+    uv.y = 2.0 * uv.y - 1.0;
 	lowp vec3 rd = normalize(rotate_y(rotate_x(vec3(0.0, 0.0, 1.0),-uv.y*3.1415926535/2.0),-uv.x*3.1415926535)); //transform UV to spherical panorama 3d coords
 	rd.x*=-1.0; ////The x-axis is inverted on the godot scene for unknown reasons
 		
@@ -119,10 +120,8 @@ void fragment(){
 	lowp vec3 sky;
 	sky = getAtmosphericScattering(rd,SUN_POS);
 	sky += draw_night_sky(max(max(sky.b,sky.r),sky.g),rd,cld.a,TIME);
-	lowp float lighting = texture(lighting_texture,uv_sphere(rd,LIGHTTING_POS,0.2)).r*LIGHTING_STRENGTH.r;
+	lowp float lighting = texture(lighting_texture,uv_sphere(rd,LIGHTTING_POS,0.3)).r*LIGHTING_STRENGTH.r;
 	sky = mix (sky.rgb, LIGHTING_STRENGTH,0.5) + lighting; //flash of light in the sky simulates a lightning strike
-	cld.rgb += lighting;
-	
 	sky = mix(sky, cld.rgb/(0.0001+cld.a), cld.a);
 	COLOR=vec4(sky,1.0);
 }
