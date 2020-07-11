@@ -1,9 +1,11 @@
-[gd_scene load_steps=11 format=2]
+[gd_scene load_steps=13 format=2]
 
 [ext_resource path="res://default_env.tres" type="Environment" id=1]
 [ext_resource path="res://shaders/Sky_with_simple_colors.shader" type="Shader" id=2]
 [ext_resource path="res://shaders/Clouds.shader" type="Shader" id=3]
 [ext_resource path="res://shaders/noise.png" type="Texture" id=4]
+[ext_resource path="res://addons/SIsilicon.vfx.godrays/GodRays.gd" type="Script" id=5]
+[ext_resource path="res://shaders/thunder.ogg" type="AudioStream" id=6]
 
 [sub_resource type="GDScript" id=1]
 script/source = "tool
@@ -39,6 +41,7 @@ export (float, 0.0,1.0,0.0001) var wind_strength: float = 0.1 setget set_wind_st
 export (float, 0.0,1.0,0.0001) var clouds_coverage: float = 0.5 setget set_clouds_coverage#from 0 to 1
 export (float, 1.0,10.0,0.0001) var clouds_size: float = 1.0 setget set_clouds_size#from 1 to 10
 export (float, 0.0,1.0,0.0001) var clouds_softness: float = 1.0 setget set_clouds_softness#from 0 to 1
+export (float, 0.0,1.0,0.0001) var clouds_dens: float = 0.07 setget set_clouds_dens#from 0 to 1
 export (float, 0.0,1.0,0.0001) var clouds_height: float = 0.35 setget set_clouds_height#from 0 to 1
 export (float, 0.0,1.0,0.0001) var quality: float = 0.25 setget set_quality#from 0 to 1
 
@@ -54,19 +57,20 @@ func set_call_deff_shader_params(node, params, value):
 
 func set_clouds_resolution(value):
 	clouds_resolution = value
-	if clouds_view and clouds_tex:
+	if is_inside_tree():
 		clouds_view.size = Vector2(clouds_resolution,clouds_resolution)
 		clouds_tex.texture.set_size_override(Vector2(clouds_resolution,clouds_resolution))
 
 func set_sky_resolution(value):
 	sky_resolution = value
-	if sky_view and sky_tex:
+	if is_inside_tree():
 		sky_view.size = Vector2(sky_resolution,sky_resolution)
 		sky_tex.texture.set_size_override(Vector2(sky_resolution,sky_resolution))
 	
 func _ready():
 	god_rays = get_node_or_null(\"GodRays\")
-	call_deferred(\"set_god_rays\",false)
+	_set_god_rays(true)
+	set_lighting_strike(false)
 	call_deferred(\"_set_attenuation\",3.0)
 	call_deferred(\"_set_exposure\",1.0)
 	call_deferred(\"_set_light_size\",0.3)
@@ -115,7 +119,7 @@ func set_time_of_day(value):
 	set_time()
 
 func set_time():
-	if !sun or !env or !sky_tex or !clouds_tex:
+	if !is_inside_tree():
 		return
 	var light_color :Color = Color(1.0,1.0,1.0,1.0)
 	var light_energy: float = night_level_light
@@ -175,47 +179,38 @@ func set_time():
 	env.ambient_light_color = light_color
 	env.adjustment_saturation = 1-clouds_coverage*0.5
 
-func _lighting_on():
-	set_lighting_strike(true)
-
-func _lighting_off():
-	set_lighting_strike(false)
-	
-func set_lighting_strike(on):
-	if on:
-		lighting_strike = true
-	else:
-		lighting_strike = false
-		if sky_tex:
-			call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/LIGHTING_STRENGTH\",Vector3(0.0,0.0,0.0))
-		set_time()
-
 func set_clouds_height(value):
 	clouds_height = clamp(value,0.0,1.0)
-	if clouds_tex:
+	if is_inside_tree():
 		call_deferred(\"set_call_deff_shader_params\", clouds_tex.material, \"shader_param/HEIGHT\",clouds_height)
 
 func set_clouds_coverage(value):
 	clouds_coverage = clamp(value,0.0,1.0)
-	if clouds_tex:
+	if is_inside_tree():
 		call_deferred(\"set_call_deff_shader_params\", clouds_tex.material, \"shader_param/COVERAGE\",1.0-clouds_coverage)
 		call_deferred(\"set_call_deff_shader_params\", clouds_tex.material, \"shader_param/ABSORPTION\",clouds_coverage+0.75)
 		call_deferred(\"set_call_deff_shader_params\", clouds_tex.material, \"shader_param/THICKNESS\",clouds_coverage*10+10)
 		call_deferred(\"set_time\")
 
 func set_clouds_size(value):
-	clouds_size = clamp(value,1.0,10.0)
-	if clouds_tex:
-		call_deferred(\"set_call_deff_shader_params\", clouds_tex.material, \"shader_param/clouds_size\",clouds_size)
+	clouds_size = clamp(value,0.0,10.0)
+	if is_inside_tree():
+		call_deferred(\"set_call_deff_shader_params\", clouds_tex.material, \"shader_param/SIZE\",clouds_size)
 
 func set_clouds_softness(value):
 	clouds_softness = clamp(value,0.0,1.0)
-	if clouds_tex:
-		call_deferred(\"set_call_deff_shader_params\", clouds_tex.material, \"shader_param/clouds_softness\",clouds_softness)
+	if is_inside_tree():
+		call_deferred(\"set_call_deff_shader_params\", clouds_tex.material, \"shader_param/SOFTNESS\",clouds_softness)
+
+func set_clouds_dens(value: float):
+	clouds_dens = clamp(value,0.0,1.0)
+	if is_inside_tree():
+		call_deferred(\"set_call_deff_shader_params\", clouds_tex.material, \"shader_param/DENS\",clouds_dens)
+
 
 func set_quality(value):
 	quality = value
-	if clouds_tex:
+	if is_inside_tree():
 		call_deferred(\"set_call_deff_shader_params\", clouds_tex.material, \"shader_param/STEPS\",clamp (int(quality*100),2,100))
 
 func set_wind_dir(value):
@@ -224,88 +219,108 @@ func set_wind_dir(value):
 
 func set_wind_strength(value):
 	wind_strength = value
-	if clouds_tex:
+	if is_inside_tree():
 		call_deferred(\"set_call_deff_shader_params\", clouds_tex.material, \"shader_param/WIND\",Vector3(-wind_dir.x,0.0,wind_dir.y)*wind_strength) #The x-axis is inverted on the stage for unknown reasons, so we have fixed this for light source
 	
 func set_moon_radius(value):
 	moon_radius = clamp(value,0.0,1.0)
-	if sky_tex:
+	if is_inside_tree():
 		call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/moon_radius\",value)
 	
 func set_moon_phase(value):
 	moon_phase = clamp(value,0.0,1.0)
-	if sky_tex:
+	if is_inside_tree():
 		call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/MOON_PHASE\",moon_phase*0.4-0.2) # convert to diapazon -0.2...+0.2
 
 func set_sun_light(value):
 	sun_light = value
-	if sky_tex:
+	if is_inside_tree():
 		call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/sun_color\",sun_light)
 
 func set_night_color_sky(value):
 	night_color_sky = value
-	if sky_tex:
+	if is_inside_tree():
 		call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/night_color_sky\",night_color_sky)
 
 func set_sunset_color_horizon(value):
 	sunset_color_horizon = value
-	if sky_tex:
+	if is_inside_tree():
 		call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/sunset_color_horizon\",sunset_color_horizon)
 
 func set_day_color_sky(value):
 	day_color_sky = value
-	if sky_tex:
+	if is_inside_tree():
 		call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/day_color_sky\",day_color_sky)
 	
 func set_day_color_horizon(value):
 	day_color_horizon = value
-	if sky_tex:
+	if is_inside_tree():
 		call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/sunset_color_sky\",day_color_horizon)
 		call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/day_color_horizon\",day_color_horizon)
 
 func set_moon_color(value):
 	moon_color = value
-	if sky_tex:
+	if is_inside_tree():
 		call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/moon_color\",moon_color)
 
 func set_clouds_color(value):
 	clouds_color = value
-	if clouds_tex:
+	if is_inside_tree():
 		call_deferred(\"set_call_deff_shader_params\", clouds_tex.material, \"shader_param/clouds_color\",clouds_color)
 
 func _process(delta):
-	if (lighting_strike):
-		iTime += delta
-		var lighting_stength = clamp(sin(iTime*31.4),0.1,1.0)
-		lighting_pos = lighting_pos.normalized()
-		sun.light_color = sun_light
-		sun.light_energy = lighting_stength*2
-		call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/LIGHTTING_POS\",lighting_pos)
-		call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/LIGHTING_STRENGTH\",Vector3(lighting_stength,lighting_stength,lighting_stength))
-		lighting_pos.x *= -1
-		sun.look_at_from_position(lighting_pos,Vector3.ZERO,Vector3.UP);
-	else:
-		iTime = 0.0
+	iTime += delta
+	var lighting_strength = clamp(sin(iTime*20.0),0.0,1.0)
+	lighting_pos = lighting_pos.normalized()
+	sun.light_color = sun_light
+	sun.light_energy = lighting_strength*2
+	call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/LIGHTTING_POS\",lighting_pos)
+	call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/LIGHTING_STRENGTH\",Vector3(lighting_strength,lighting_strength,lighting_strength))
+	sun.look_at_from_position(lighting_pos,Vector3.ZERO,Vector3.UP);
 
-func _set_exposure(value):
+func set_lighting_strike(on: bool):
+	if on:
+		_set_god_rays(false)
+		set_process(true)
+	else:
+		_set_god_rays(true)
+		set_process(false)
+		iTime = 0.0
+		if sky_tex:
+			call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/LIGHTING_STRENGTH\",Vector3(0.0,0.0,0.0))
+		set_time()
+
+func thunder():
+	var thunder_sound:AudioStreamPlayer = $thunder;
+	if thunder_sound.is_playing():
+		#thunder_sound.stop()
+		return
+	thunder_sound.play()
+	yield(get_tree().create_timer(0.3),\"timeout\");
+	set_lighting_strike(true)
+	yield(get_tree().create_timer(0.8),\"timeout\");
+	set_lighting_strike(false)
+
+func _set_exposure(value: float):
 	if god_rays:
 		god_rays.set_exposure(value)
 
-func _set_attenuation(value):
+func _set_attenuation(value: float):
 	if god_rays:
 		god_rays.set_attenuation(value)
 	
-func _set_light_size(value):
+func _set_light_size(value: float):
 	if god_rays:
 		god_rays.set_light_size(value)
 
-func set_god_rays(button_pressed):
+func _set_god_rays(on: bool):
 	if not god_rays:
 		return
-	if button_pressed:
-		add_child(god_rays)
-		god_rays.light = get_node(\"Sun_Moon\")
-		god_rays.set_clouds(get_node(\"cloud_viewport\").get_texture())
+	if on:
+		if !god_rays.is_inside_tree():
+			add_child(god_rays)
+		god_rays.light = sun
+		god_rays.set_clouds(clouds_view.get_texture())
 	else:
 		remove_child(god_rays)
 "
@@ -315,16 +330,13 @@ resource_local_to_scene = true
 shader = ExtResource( 3 )
 shader_param/WIND = Vector3( -0.1, 0, 0 )
 shader_param/SUN_POS = null
-shader_param/clouds_size = 2.0
-shader_param/clouds_softness = 1.0
+shader_param/SIZE = 1.954
+shader_param/SOFTNESS = 0.575
 shader_param/COVERAGE = 0.5
 shader_param/HEIGHT = 0.35
 shader_param/THICKNESS = 15.0
 shader_param/ABSORPTION = 1.25
 shader_param/STEPS = 20
-shader_param/sun_color = Color( 1, 0.705882, 0.54902, 1 )
-shader_param/clouds_color = Color( 1, 1, 1, 1 )
-shader_param/moon_radius = 0.07
 shader_param/Noise = ExtResource( 4 )
 
 [sub_resource type="ImageTexture" id=3]
@@ -339,11 +351,11 @@ viewport_path = NodePath("clouds_viewport")
 [sub_resource type="ShaderMaterial" id=5]
 resource_local_to_scene = true
 shader = ExtResource( 2 )
-shader_param/DAY_TIME = Vector2( 1, 0.910668 )
-shader_param/SUN_POS = Vector3( 0.998906, -0.0467563, 0 )
-shader_param/MOON_POS = Vector3( -0.706333, 0.0467563, 0.706333 )
+shader_param/DAY_TIME = Vector2( 3, 0.378 )
+shader_param/SUN_POS = Vector3( 0.31995, 0.947434, 0 )
+shader_param/MOON_POS = Vector3( -0.226239, -0.947434, 0.226239 )
 shader_param/MOON_PHASE = -0.2
-shader_param/LIGHTING_STRENGTH = null
+shader_param/LIGHTING_STRENGTH = Vector3( 0, 0, 0 )
 shader_param/LIGHTTING_POS = null
 shader_param/night_color_sky = Color( 0, 0, 0, 1 )
 shader_param/sunset_color_sky = Color( 0.239216, 0.529412, 1, 1 )
@@ -367,21 +379,22 @@ script = SubResource( 1 )
 day_color_horizon = Color( 0.239216, 0.529412, 1, 1 )
 moon_color = Color( 0.94902, 0.54902, 0.109804, 1 )
 moon_radius = 0.2
-clouds_size = 2.0
+clouds_size = 2.7422
+clouds_dens = 0.0
 clouds_height = 0.35
 quality = 0.2
-hours = 7
-minutes = 50
-time_of_day = 0.326389
+hours = 12
+minutes = 46
+seconds = 48
+time_of_day = 0.5325
 night_level_light = 0.05
 
 [node name="Env" type="WorldEnvironment" parent="."]
 environment = ExtResource( 1 )
 
 [node name="Sun_Moon" type="DirectionalLight" parent="."]
-transform = Transform( -4.37114e-08, -0.0467564, -0.998905, 0, 0.998908, -0.0467563, 1, -2.04379e-09, -4.36635e-08, -0.998906, -0.0467563, 0 )
-light_color = Color( 0.964267, 0.691067, 0.572333, 1 )
-light_energy = 0.341501
+transform = Transform( -4.37114e-08, 0.947436, -0.31995, 0, 0.319951, 0.947433, 1, 4.14137e-08, -1.39855e-08, -0.31995, 0.947434, 0 )
+light_energy = 0.75
 shadow_enabled = true
 shadow_color = Color( 0.3, 0.3, 0.3, 1 )
 directional_shadow_depth_range = 1
@@ -404,3 +417,12 @@ render_target_update_mode = 3
 material = SubResource( 5 )
 texture = SubResource( 6 )
 centered = false
+
+[node name="GodRays" type="Spatial" parent="."]
+script = ExtResource( 5 )
+exposure = 1.0
+attenuation = 3.0
+light_size = 0.3
+
+[node name="thunder" type="AudioStreamPlayer" parent="."]
+stream = ExtResource( 6 )
