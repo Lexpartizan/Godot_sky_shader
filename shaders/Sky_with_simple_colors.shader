@@ -80,10 +80,11 @@ void fragment(){
     uv.x = 2.0 * uv.x - 1.0;
     uv.y = 2.0 * uv.y - 1.0;
 	lowp vec3 rd = normalize(rotate_y(rotate_x(vec3(0.0, 0.0, 1.0),-uv.y*3.1415926535/2.0),-uv.x*3.1415926535)); //transform UV to spherical panorama 3d coords
+	//rd.x*=-1.0; ////The x-axis is inverted on the godot scene for unknown reasons
 	lowp vec4 sun_amount = sun_color * min(pow(max(dot(rd, SUN_POS), 0.0), 1500.0) * 5.0, 1.0) + sun_color * min(pow(max(dot(rd, SUN_POS), 0.0), 10.0) * .3, 1.0);
 	lowp float skyPow = dot(rd, vec3(0.0, -1.0, 0.0));
     lowp float horizonPow =1.-pow(1.0-abs(skyPow), 5.0);
-    lowp vec4 cld = texture(cloud_env_texture, SCREEN_UV);
+    lowp vec4 cld = texture(cloud_env_texture, 1.0-UV);//The axis is inverted on the godot scene for unknown reasons,so gor godrays inverted them!;
 	lowp vec4 sky;
 	
 	switch(int(DAY_TIME.x))
