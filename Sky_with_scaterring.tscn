@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=2]
+[gd_scene load_steps=15 format=2]
 
 [ext_resource path="res://default_env.tres" type="Environment" id=1]
 [ext_resource path="res://shaders/Sky_with_scaterring.shader" type="Shader" id=2]
@@ -8,8 +8,6 @@
 [ext_resource path="res://addons/SIsilicon.vfx.godrays/GodRays.gd" type="Script" id=6]
 [ext_resource path="res://shaders/lightning.png" type="Texture" id=7]
 [ext_resource path="res://shaders/thunder.ogg" type="AudioStream" id=8]
-[ext_resource path="res://noiseTexture.png" type="Texture" id=9]
-[ext_resource path="res://noise_rgb1.png" type="Texture" id=10]
 
 [sub_resource type="GDScript" id=1]
 script/source = "tool
@@ -293,7 +291,7 @@ func set_lighting_strike(on: bool):
 func set_lighting_pos(value):
 	lighting_pos = value;
 	if is_inside_tree():
-		call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/LIGHTTING_POS\",lighting_pos)
+		call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/LIGHTTING_POS\",lighting_pos.normalized())
 
 		
 func thunder():
@@ -333,26 +331,22 @@ func _set_god_rays(on: bool):
 
 [sub_resource type="ShaderMaterial" id=2]
 shader = ExtResource( 4 )
-shader_param/FAST = true
 shader_param/WIND = Vector3( 0.1, 0, 0 )
-shader_param/SUN_POS = Vector3( -0.707107, -0.678367, -0.199544 )
+shader_param/SUN_POS = Vector3( -0.707107, -0.706602, 0.0267147 )
 shader_param/SIZE = 2.0
 shader_param/SOFTNESS = 1.0
-shader_param/DENS = 0.07
 shader_param/COVERAGE = 0.57163
 shader_param/HEIGHT = 0.35
 shader_param/THICKNESS = 14.691
 shader_param/ABSORPTION = 1.2191
 shader_param/STEPS = 100
 shader_param/Noise = ExtResource( 3 )
-shader_param/Noise1 = ExtResource( 9 )
-shader_param/Noise2 = ExtResource( 10 )
 
 [sub_resource type="ImageTexture" id=3]
 flags = 4
 lossy_quality = 1.0
 flags = 4
-size = Vector2( 4096, 4096 )
+size = Vector2( 1024, 1024 )
 
 [sub_resource type="ViewportTexture" id=4]
 viewport_path = NodePath("clouds_viewport")
@@ -360,15 +354,15 @@ viewport_path = NodePath("clouds_viewport")
 [sub_resource type="ShaderMaterial" id=5]
 resource_local_to_scene = true
 shader = ExtResource( 2 )
-shader_param/SUN_POS = Vector3( 0.707107, 0.678367, 0.199544 )
-shader_param/MOON_POS = Vector3( 0, -0.959356, -0.282197 )
-shader_param/MOON_TEX_POS = Vector3( 0, -0.989787, -0.142555 )
+shader_param/SUN_POS = Vector3( 0.707107, 0.706602, -0.0267147 )
+shader_param/MOON_POS = Vector3( 0, -0.999286, 0.0377803 )
+shader_param/MOON_TEX_POS = Vector3( 0, -0.999821, 0.0188935 )
 shader_param/MOON_PHASE = -1.0
 shader_param/moon_radius = 0.05
 shader_param/sun_radius = 0.04
 shader_param/attenuation = 1.0
 shader_param/LIGHTING_STRENGTH = Vector3( 0, 0, 0 )
-shader_param/LIGHTTING_POS = Vector3( 0, 0.707107, 0.707107 )
+shader_param/LIGHTTING_POS = Vector3( 2, 2, 2 )
 shader_param/sky_tone = 3.0
 shader_param/sky_density = 0.75
 shader_param/sky_rayleig_coeff = 1.0
@@ -386,16 +380,15 @@ shader_param/lighting_texture = ExtResource( 7 )
 flags = 0
 lossy_quality = 1.0
 flags = 0
-size = Vector2( 4096, 4096 )
+size = Vector2( 1024, 1024 )
 
 [node name="Sky_with_scaterring" type="Spatial"]
 script = SubResource( 1 )
-clouds_resolution = 4096
-sky_resolution = 4096
-hours = 15
-minutes = 5
-seconds = 33
-time_of_day_setup = 0.628865
+sky_resolution = 1024
+hours = 13
+minutes = 51
+seconds = 20
+time_of_day_setup = 0.577319
 clouds_coverage = 0.4691
 clouds_dens = 0.1215
 clouds_height = 0.35
@@ -406,20 +399,20 @@ sun_radius = 0.04
 moon_radius = 0.05
 moon_phase = -1.0
 night_level_light = 0.1
-lighting_pos = Vector3( 1, 1, 1 )
+lighting_pos = Vector3( 2, 2, 2 )
 
 [node name="Env" type="WorldEnvironment" parent="."]
 environment = ExtResource( 1 )
 
 [node name="Sun_Moon" type="DirectionalLight" parent="."]
-transform = Transform( 0.27159, -0.652869, 0.707103, 0, 0.734722, 0.678364, -0.962413, -0.184238, 0.199543, 0.707107, 0.678367, 0.199544 )
+transform = Transform( -0.0377534, -0.706098, 0.707103, 0, 0.707611, 0.706598, -0.999287, 0.0266766, -0.0267146, 0.707107, 0.706602, -0.0267147 )
 light_energy = 0.76545
 shadow_enabled = true
 shadow_color = Color( 0.3, 0.3, 0.3, 1 )
 directional_shadow_depth_range = 1
 
 [node name="clouds_viewport" type="Viewport" parent="."]
-size = Vector2( 4096, 4096 )
+size = Vector2( 1024, 1024 )
 transparent_bg = true
 render_target_update_mode = 3
 
@@ -429,7 +422,7 @@ texture = SubResource( 3 )
 centered = false
 
 [node name="sky_viewport" type="Viewport" parent="."]
-size = Vector2( 4096, 4096 )
+size = Vector2( 1024, 1024 )
 render_target_update_mode = 3
 
 [node name="sky_texture" type="Sprite" parent="sky_viewport"]
