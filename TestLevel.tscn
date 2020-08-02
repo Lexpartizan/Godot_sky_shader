@@ -2,7 +2,7 @@
 
 [ext_resource path="res://Player.tscn" type="PackedScene" id=1]
 [ext_resource path="res://MovedPlatform.tscn" type="PackedScene" id=2]
-[ext_resource path="res://Sky_with_scaterring.tscn" type="PackedScene" id=3]
+[ext_resource path="res://Sky.tscn" type="PackedScene" id=3]
 [ext_resource path="res://Tree.obj" type="ArrayMesh" id=4]
 
 [sub_resource type="GDScript" id=1]
@@ -12,7 +12,7 @@ func _input(event):
 	if Input.is_key_pressed(KEY_ESCAPE):
 		get_tree().quit()
 	if Input.is_action_just_pressed(\"gui_management\"):
-		$Sky_with_scaterring.thunder()
+		$Sky.thunder()
 "
 
 [sub_resource type="SpatialMaterial" id=2]
@@ -45,15 +45,26 @@ extents = Vector3( 1, 1, 2.86814 )
 [node name="TestLevel" type="Spatial"]
 script = SubResource( 1 )
 
-[node name="Sky_with_scaterring" parent="." instance=ExtResource( 3 )]
+[node name="Sky" parent="." instance=ExtResource( 3 )]
 clouds_resolution = 1024
+SCATERRING = false
+multiScatterPhase = 0.0
 hours = 16
-minutes = 33
-seconds = 40
-time_of_day_setup = 0.690056
-clouds_coverage = 0.5
-sky_rayleig_coeff = 0.75
-moon_radius = 0.5
+minutes = 58
+seconds = 36
+time_of_day_setup = 0.707367
+clouds_coverage = 0.4588
+clouds_size = 2.0
+clouds_softness = 1.0
+moon_light = Color( 0.6, 0.6, 0.8, 1 )
+sunset_light = Color( 1, 0.7, 0.55, 1 )
+sunset_offset = -0.1
+sunset_range = 0.2
+day_light = Color( 1, 1, 1, 1 )
+moon_tint = Color( 1, 0.7, 0.35, 1 )
+clouds_tint = Color( 1, 1, 1, 1 )
+wind_dir = Vector2( 1, 0 )
+wind_strength = 0.1
 
 [node name="LevelGeometry" type="Spatial" parent="."]
 
