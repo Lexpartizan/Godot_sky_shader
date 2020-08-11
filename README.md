@@ -25,11 +25,11 @@ There is a "version_for_Godot_3_1_2.zip" file which contains a subset of this pr
 # Demo
 
 Attention! After change texture resolution reload scene with sky!
-Now we have two scenes:
-1. Old scene sky_with_simple_colors, where i get sky color from mix simple colors.
-2. New scene sky_with_scaterring, where i get sky color from fake scaterring shader,
+Now we have two modes (checkbox SCATERRING):
+1. Sky with simple gradient. For easy setup.
+2. Sky with fake scaterring shader,
 based on https://www.shadertoy.com/view/Ml2cWG
-But with scaterring dificult setup colors for sunset and day sky, so we have two scenes.
+But with scaterring dificult setup colors for sunset and day sky, so we have two modes for this.
 
 The demo scene Sky.tscn showcases some of the abilities of this dynamic sky.
 
