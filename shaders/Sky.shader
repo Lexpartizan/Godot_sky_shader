@@ -89,20 +89,20 @@ lowp vec3 draw_night_sky (lowp float sky_amount, lowp vec3 rd, lowp float cld_al
 
 lowp vec3 getSkyAbsorption(lowp vec3 color, lowp float h){return exp2(color * -h) * 2.0;}
 lowp float horizon_limiter (lowp float h){return clamp(abs(h),0.1+smoothstep(0.0,0.3,SUN_POS.y)*0.2,1.0);}// eliminate the dark line and other artefacts on the horizon with clamp
-lowp float zenithDensity(lowp float dens){return sky_density/pow(max(dens, 0.0), 0.75);}
+lowp float zenithDensity(lowp float dens){return sky_density/pow(max(dens, 0.0035), 0.75);}
 lowp float getSunPoint(lowp vec3 p, lowp vec3 lp) {return min(pow(max(dot(p,lp), 0.0), 100.0/sun_radius) * 100.0, 2.0);}//return smoothstep(sun_radius, sun_radius*0.5, distance(p, lp)) * 10.0;
 lowp float getRayleigMultiplier(lowp vec3 p, lowp vec3 lp){return sky_rayleig_coeff + pow(1.0 - clamp(distance(p, lp), 0.0, 1.0), 2.0) * 3.14159265359 * 0.5;}
 lowp float getMie(lowp vec3 p, lowp vec3 lp) { lowp float disk = clamp(1.0 - pow(distance(p, lp), 0.1), 0.0, 1.0); return disk*disk*(3.0 - 2.0 * disk) * sky_mie_coeff * 3.14159265359;}
 lowp vec3 jodieReinhardTonemap(lowp vec3 color){ lowp vec3 tc = color / (color + 1.0); return mix(color / (dot(color, vec3(0.2126, 0.7152, 0.0722)) + 1.0), tc, tc);}
 
-lowp vec3 getAtmosphericScattering(lowp vec3 p, lowp vec3 lp){
+lowp vec3 getAtmosphericScattering(lowp vec3 p, lowp vec3 sun){
 	lowp vec3 skyColor = color_sky.rgb * (1.0 + anisotropicIntensity);
 	lowp float zenith = zenithDensity(horizon_limiter(p.y));
-	lowp float sunPointDistMult =  clamp(max(lp.y + multiScatterPhase, 0.0), 0.0, 1.0);
+	lowp float sunPointDistMult =  clamp(max(sun.y + multiScatterPhase, 0.0), 0.0, 1.0);
 	lowp vec3 absorption = getSkyAbsorption(skyColor, zenith);
-    lowp vec3 sunAbsorption = getSkyAbsorption(skyColor, zenithDensity(lp.y + multiScatterPhase));
-	lowp vec3 sky = skyColor * zenith *getRayleigMultiplier(p, lp);
-	sky = mix(sky * absorption, sky / (sky + 0.5), sunPointDistMult) + getSunPoint(p, lp) * absorption + getMie(p, lp) * sunAbsorption;
+    lowp vec3 sunAbsorption = getSkyAbsorption(skyColor, zenithDensity(sun.y + multiScatterPhase));
+	lowp vec3 sky = skyColor * zenith *getRayleigMultiplier(p, sun);
+	sky = mix(sky * absorption, sky / (sky + 0.5), sunPointDistMult) + getSunPoint(p, sun) * absorption + getMie(p, sun) * sunAbsorption;
 	sky *= sunAbsorption * 0.5 + 0.5 * length(sunAbsorption);
 	sky = jodieReinhardTonemap(sky);
 	sky = pow(sky, vec3(sky_tone));
@@ -121,7 +121,7 @@ lowp vec3 get_gradient_sky(lowp vec3 rd,lowp vec3 sun)
 	}
 	sky_color = mix(sky_color,vec3(0), smoothstep(1., 2.5, distance(rd,sun)));
 	lowp vec3 sun_color = vec3(1.0);
-	sky_color+=sun_color * min(pow(max(dot(rd, SUN_POS), 0.0), 40.0/sun_radius) * 5.0, 1.0) + sun_color * min(pow(max(dot(rd, SUN_POS), 0.0), 10.0) * .3, 1.0);
+	sky_color+=sun_color * min(pow(max(dot(rd, SUN_POS), 0.0), 40.0/sun_radius) * 5.0, 1.0) + sun_color * min(pow(max(dot(rd, SUN_POS), 0.0), 20.0) * .3, 1.0);
 	//sky_color+=getSunPoint(rd,sun);
 	return sky_color;
 }
