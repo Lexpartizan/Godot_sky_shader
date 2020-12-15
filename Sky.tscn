@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=2]
+[gd_scene load_steps=16 format=2]
 
 [ext_resource path="res://shaders/noise.png" type="Texture" id=1]
 [ext_resource path="res://shaders/Moon_1k.png" type="Texture" id=2]
@@ -6,11 +6,12 @@
 [ext_resource path="res://shaders/Sky.shader" type="Shader" id=4]
 [ext_resource path="res://shaders/Clouds.shader" type="Shader" id=5]
 [ext_resource path="res://addons/SIsilicon.vfx.godrays/GodRays.gd" type="Script" id=6]
+[ext_resource path="res://sky_environment.tres" type="Environment" id=7]
 
 [sub_resource type="GDScript" id=1]
 script/source = "tool
 extends Spatial
-onready var env: Environment = $Env.environment
+onready var env: Environment = $WorldEnvironment.environment
 onready var sun: DirectionalLight = $Sun_Moon
 onready var sky_view: Viewport = $sky_viewport
 onready var clouds_view: Viewport = $clouds_viewport
@@ -111,7 +112,6 @@ func set_SCATERRING(value :bool):
 func set_sky_gradient(value: GradientTexture):
 	sky_gradient_texture = value
 	if is_inside_tree():
-		#sky_gradient_texture.gradient = sky_gradient
 		call_deferred(\"set_call_deff_shader_params\", sky_tex.material, \"shader_param/sky_gradient_texture\",sky_gradient_texture)
 		
 
@@ -180,8 +180,7 @@ func set_time():
 	env.ambient_light_energy = light_energy
 	env.ambient_light_color = light_color
 	env.adjustment_saturation = 1-clouds_coverage*0.5
-	
-	#env.set_fog_color(light_color)
+	env.set_fog_color(light_color)
 	#call_deferred(\"reflections_update\")
 
 
@@ -193,8 +192,6 @@ func set_clouds_height(value: float):
 func set_clouds_coverage(value: float):
 	clouds_coverage = clamp(value,0.0,1.0)
 	if is_inside_tree():
-		var shadow_color: float = clamp(clouds_coverage,0,0.95)
-		sun.shadow_color=Color(shadow_color,shadow_color,shadow_color)
 		call_deferred(\"set_call_deff_shader_params\", clouds_tex.material, \"shader_param/ABSORPTION\",clouds_coverage+0.75)
 		call_deferred(\"set_call_deff_shader_params\", clouds_tex.material, \"shader_param/COVERAGE\",1.0-(clouds_coverage*0.7+0.1))
 		call_deferred(\"set_call_deff_shader_params\", clouds_tex.material, \"shader_param/THICKNESS\",clouds_coverage*10.0+10.0)
@@ -360,27 +357,10 @@ colors = PoolColorArray( 0.968627, 0.247059, 0.0784314, 1, 0.239216, 0.635294, 0
 [sub_resource type="GradientTexture" id=3]
 gradient = SubResource( 2 )
 
-[sub_resource type="ViewportTexture" id=4]
-
-[sub_resource type="PanoramaSky" id=5]
-panorama = SubResource( 4 )
-
-[sub_resource type="Environment" id=6]
-background_mode = 2
-background_sky = SubResource( 5 )
-ambient_light_color = Color( 0.965794, 0.691449, 0.571378, 1 )
-ambient_light_energy = 0.227645
-ambient_light_sky_contribution = 0.0
-fog_color = Color( 1, 1, 1, 1 )
-tonemap_mode = 3
-ss_reflections_enabled = true
-adjustment_enabled = true
-adjustment_saturation = 0.75
-
-[sub_resource type="ShaderMaterial" id=7]
+[sub_resource type="ShaderMaterial" id=4]
 shader = ExtResource( 5 )
 shader_param/WIND = Vector3( 0.1, 0, 0 )
-shader_param/SUN_POS = Vector3( 0, -0.0828972, 0.996558 )
+shader_param/SUN_POS = Vector3( 0, -0.967138, 0.25425 )
 shader_param/SIZE = 2.0
 shader_param/SOFTNESS = 1.0
 shader_param/COVERAGE = 0.55
@@ -390,43 +370,43 @@ shader_param/ABSORPTION = 1.25
 shader_param/STEPS = 100
 shader_param/Noise = ExtResource( 1 )
 
-[sub_resource type="ImageTexture" id=8]
+[sub_resource type="ImageTexture" id=5]
 flags = 4
 lossy_quality = 1.0
 flags = 4
 size = Vector2( 1024, 1024 )
 
-[sub_resource type="ViewportTexture" id=9]
+[sub_resource type="ViewportTexture" id=6]
 viewport_path = NodePath("clouds_viewport")
 
-[sub_resource type="ShaderMaterial" id=10]
+[sub_resource type="ShaderMaterial" id=7]
 resource_local_to_scene = true
 shader = ExtResource( 4 )
-shader_param/SCATERRING = true
-shader_param/SUN_POS = Vector3( 0, 0.0828972, -0.996558 )
-shader_param/MOON_POS = Vector3( 0, -0.0828972, 0.996558 )
-shader_param/MOON_TEX_POS = Vector3( 0, -0.735832, 0.677164 )
+shader_param/SCATERRING = false
+shader_param/SUN_POS = Vector3( 0, 0.967138, -0.25425 )
+shader_param/MOON_POS = Vector3( 0, -0.967138, 0.25425 )
+shader_param/MOON_TEX_POS = Vector3( 0, -0.991751, 0.128183 )
 shader_param/MOON_PHASE = -1.0
 shader_param/moon_radius = 0.05
 shader_param/sun_radius = 0.04
-shader_param/attenuation = 0.303526
+shader_param/attenuation = 1.0
 shader_param/LIGHTING_STRENGTH = Vector3( 0, 0, 0 )
 shader_param/LIGHTTING_POS = Vector3( 2, 2, 2 )
-shader_param/sky_tone = 2.2
-shader_param/sky_density = 0.7
+shader_param/sky_tone = 3.5
+shader_param/sky_density = 0.5
 shader_param/sky_rayleig_coeff = 1.0
-shader_param/sky_mie_coeff = 2.0
-shader_param/multiScatterPhase = 0.1
-shader_param/anisotropicIntensity = 0.0
-shader_param/color_sky = Color( 0.3, 0.57, 1, 1 )
+shader_param/sky_mie_coeff = 0.5
+shader_param/multiScatterPhase = 0.0
+shader_param/anisotropicIntensity = 1.5
+shader_param/color_sky = Color( 0.156863, 0.392157, 1, 1 )
 shader_param/moon_tint = Color( 1, 0.7, 0.35, 1 )
-shader_param/clouds_tint = Color( 0.965794, 0.691449, 0.571378, 1 )
+shader_param/clouds_tint = Color( 1, 1, 1, 1 )
 shader_param/MOON = ExtResource( 2 )
-shader_param/cloud_env_texture = SubResource( 9 )
+shader_param/cloud_env_texture = SubResource( 6 )
 shader_param/lighting_texture = ExtResource( 3 )
 shader_param/sky_gradient_texture = SubResource( 3 )
 
-[sub_resource type="ImageTexture" id=11]
+[sub_resource type="ImageTexture" id=8]
 flags = 0
 lossy_quality = 1.0
 flags = 0
@@ -436,35 +416,33 @@ size = Vector2( 1024, 1024 )
 script = SubResource( 1 )
 sky_resolution = 1024
 sky_gradient_texture = SubResource( 3 )
-SCATERRING = true
-color_sky = Color( 0.3, 0.57, 1, 1 )
-sky_tone = 2.2
-sky_density = 0.7
+color_sky = Color( 0.156863, 0.392157, 1, 1 )
+sky_tone = 3.5
+sky_density = 0.5
 sky_rayleig_coeff = 1.0
-multiScatterPhase = 0.1
-hours = 8
-minutes = 19
-seconds = 1
-time_of_day_setup = 0.346542
+sky_mie_coeff = 0.5
+anisotropicIntensity = 1.5
+hours = 13
+minutes = 1
+seconds = 5
+time_of_day_setup = 0.542419
 clouds_dens = 0.1215
 clouds_height = 0.35
 clouds_quality = 100
-clouds_tint = Color( 0.965794, 0.691449, 0.571378, 1 )
 sun_radius = 0.04
 moon_radius = 0.05
 moon_phase = -1.0
 night_level_light = 0.1
-lighting_pos = Vector3( 2, 2, 2 )
+lighting_pos = Vector3( 0.57735, 0.57735, 0.57735 )
 
-[node name="Env" type="WorldEnvironment" parent="."]
-environment = SubResource( 6 )
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = ExtResource( 7 )
 
 [node name="Sun_Moon" type="DirectionalLight" parent="."]
-transform = Transform( -1, 7.24712e-09, -8.71214e-08, 0, 0.99656, 0.0828968, 8.74228e-08, 0.0828974, -0.996552, 0, 0.0828972, -0.996558 )
-light_color = Color( 0.965794, 0.691449, 0.571378, 1 )
-light_energy = 0.227645
+transform = Transform( -1, 8.45501e-08, -2.22271e-08, 0, 0.254251, 0.967133, 8.74228e-08, 0.96714, -0.254249, 0, 0.967138, -0.25425 )
+light_energy = 0.75
 shadow_enabled = true
-shadow_color = Color( 0.5, 0.5, 0.5, 1 )
+shadow_color = Color( 0.3, 0.3, 0.3, 1 )
 directional_shadow_depth_range = 1
 
 [node name="clouds_viewport" type="Viewport" parent="."]
@@ -473,8 +451,8 @@ transparent_bg = true
 render_target_update_mode = 3
 
 [node name="clouds_texture" type="Sprite" parent="clouds_viewport"]
-material = SubResource( 7 )
-texture = SubResource( 8 )
+material = SubResource( 4 )
+texture = SubResource( 5 )
 centered = false
 
 [node name="sky_viewport" type="Viewport" parent="."]
@@ -482,13 +460,11 @@ size = Vector2( 1024, 1024 )
 render_target_update_mode = 3
 
 [node name="sky_texture" type="Sprite" parent="sky_viewport"]
-material = SubResource( 10 )
-texture = SubResource( 11 )
+material = SubResource( 7 )
+texture = SubResource( 8 )
 centered = false
 
 [node name="thunder" type="AudioStreamPlayer" parent="."]
-
-[node name="Camera" type="Camera" parent="."]
 
 [node name="GodRays" type="Spatial" parent="."]
 script = ExtResource( 6 )
