@@ -126,4 +126,10 @@ Example on how to set up the shaders in your project if you don't want to use th
 * it often throws an error to the console, but it doesn't interfere with the scene work.
 ERROR: create_from_image: Condition "p_image.is_null()" is true. At: scene/resources/texture.cpp:199
 Help wanted.
+* Currently only support GLES3. If your project is in GLES2, you will see
+```
+drivers/gles2/shader_gles2.cpp:130 - CanvasShaderGLES2: Fragment shader compilation failed:
+0(600) : error C1101: ambiguous overloaded function reference "min(int, int)"
+```
+Change to GLES3 to fix.
 
