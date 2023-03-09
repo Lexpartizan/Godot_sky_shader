@@ -1,6 +1,9 @@
 # Godot_sky_shader
 This project adds a dynamic sky shader to your project. It is based on https://github.com/danilw/godot-utils-and-other.
 
+For GODOT 4: https://github.com/Lexpartizan/Godot_4_sky_shader
+
+
 Complete feature list
 * day-night-cycle
 * Sun
